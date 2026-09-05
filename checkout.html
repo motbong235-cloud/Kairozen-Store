@@ -1,0 +1,382 @@
+<!--
+DESIGN NOTE — Kairozen Store full-page checkout
+Mirrors baby_checkout.html's pattern (BABY TOPUP project): the KHQR payment
+modal from index.html is extracted into its own page instead of an overlay,
+same idea as "make it a page like the topup website" asked for.
+
+Data handoff: index.html's proceedToPayment() (bank-payment path only —
+wallet payment stays instant/in-modal since there's no QR involved) writes
+order details to sessionStorage["kz_checkout_<orderId>"] and navigates here
+with ?order=<orderId>. This page has its own script — it does NOT share
+index.html's in-memory STATE object (impossible across a real navigation) —
+so it reads/writes the same localStorage keys directly:
+  kz_state2    → {products, stock, settings}
+  kz_userdata  → {users, orders}
+This keeps everything in sync for when the shopper navigates back to "/".
+-->
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ទូទាត់ · Kairozen Store</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#06080c">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Noto+Sans+Khmer:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#f5c842;--gold2:#e0a800;--bg:#06080c;--bg2:#0c1016;--bg3:#121820;--bg4:#181f2a;
+  --text:#f0f4ff;--text2:#8b95a8;--text3:#4a5568;--green:#22c55e;--red:#ef4444;
+  --border:rgba(245,200,66,0.15);--border2:rgba(255,255,255,0.07);}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans Khmer',sans-serif;min-height:100vh;overflow-x:hidden;
+  display:flex;justify-content:center;background-image:radial-gradient(ellipse at 15% -10%, rgba(245,200,66,.08), transparent 45%);}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+#page{max-width:440px;width:100%;min-height:100vh;padding:0 0 40px}
+
+.topbar{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--border2)}
+.topbar a{display:flex;align-items:center;gap:6px;color:var(--gold);font-weight:700;font-size:13px;font-family:'Syne','Noto Sans Khmer',sans-serif}
+.topbar a svg{width:15px;height:15px}
+
+.khqr-card{width:100%;margin-top:18px;background:linear-gradient(180deg,#171a21 0%,#12151b 100%);
+  border-radius:22px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.5),0 0 0 1px rgba(245,200,66,.12);position:relative}
+.khqr-top{padding:16px 18px 12px;border-bottom:1px dashed rgba(245,200,66,.25)}
+.khqr-top-row{display:flex;align-items:center;justify-content:space-between}
+.khqr-brand{font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:19px;font-weight:800;color:var(--text);letter-spacing:.2px;line-height:1}
+.khqr-brand em{color:var(--gold);font-style:normal}
+.khqr-nbc{display:flex;flex-direction:column;align-items:flex-end;background:rgba(245,200,66,.1);border:1px solid rgba(245,200,66,.25);border-radius:8px;padding:3px 8px}
+.khqr-nbc span{font-family:'Space Mono',monospace;font-size:6px;color:var(--gold);letter-spacing:.6px;text-transform:uppercase}
+.khqr-nbc strong{font-family:'Space Mono',monospace;font-size:8.5px;font-weight:700;color:var(--gold);letter-spacing:.6px}
+.khqr-merchant-bar{padding:14px 18px 10px}
+.khqr-merchant{font-family:'Noto Sans Khmer',sans-serif;font-size:12.5px;font-weight:600;color:var(--text2);letter-spacing:.2px}
+.khqr-amount-row{display:flex;align-items:baseline;gap:6px;margin-top:6px}
+.khqr-amount-num{font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:30px;font-weight:800;color:var(--gold);line-height:1}
+.khqr-amount-cur{font-family:'Space Mono',monospace;font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.5px}
+.khqr-qr-area{background:#fff;margin:14px 14px 0;border-radius:14px;padding:16px;display:flex;align-items:center;justify-content:center;min-height:220px;box-shadow:0 4px 20px rgba(0,0,0,.25)}
+.khqr-qr-area img{width:200px!important;height:200px!important;object-fit:contain;display:block;border-radius:6px}
+.khqr-qr-loading{width:200px;height:200px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:#999;font-size:11px;font-family:'Space Mono','Noto Sans Khmer',monospace}
+.qr-spinner{width:28px;height:28px;border:3px solid #f0f0f0;border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pollBlink{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.khqr-account{padding:12px 18px 4px;display:flex;align-items:center;gap:5px;font-family:'Space Mono',monospace;font-size:9.5px;color:var(--text3)}
+.khqr-banks{padding:6px 18px 4px;display:flex;gap:4px;flex-wrap:wrap}
+.bank-tag{background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);border-radius:99px;padding:2px 8px;font-size:8px;font-family:'Space Mono',monospace;color:var(--gold);font-weight:700}
+.khqr-footer-bar{padding:10px 18px 14px;display:flex;justify-content:space-between}
+.khqr-footer-bar span{font-family:'Space Mono',monospace;font-size:8px;color:var(--text3);letter-spacing:.3px}
+
+.section{padding:16px 16px 0}
+.status-pill{display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:9px 14px;margin-bottom:10px}
+.status-pill .lbl{font-size:11px;color:var(--text3);font-family:'Space Mono','Noto Sans Khmer',monospace}
+.status-pill .lbl b{color:var(--gold);font-weight:700}
+.status-pill .dot-wrap{font-size:10px;font-family:'Space Mono','Noto Sans Khmer',monospace;display:flex;align-items:center;gap:6px}
+.status-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--text3);display:inline-block;transition:background .3s;flex-shrink:0}
+
+.deeplink-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;font-weight:800;font-size:13px;padding:12px;border-radius:12px;box-shadow:0 4px 16px rgba(245,200,66,.3);margin-bottom:8px}
+.btn-secondary{width:100%;padding:12px;border-radius:12px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+
+/* Success state */
+#state-success{display:none;animation:fadeInUp .3s ease}
+.success-header{background:linear-gradient(135deg,#14532d,#166534);padding:28px 22px 24px;text-align:center;position:relative;overflow:hidden;border-radius:22px 22px 0 0;margin-top:18px}
+.success-header::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 80%,rgba(34,197,94,.15),transparent 70%)}
+.success-check{width:72px;height:72px;background:linear-gradient(135deg,#22c55e,#16a34a);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 8px 30px rgba(34,197,94,.45);position:relative}
+.success-title{font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:4px}
+.success-sub{font-size:12px;color:rgba(255,255,255,.7)}
+.success-body{background:var(--bg2);border-radius:0 0 22px 22px;padding:18px}
+.section-label{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.section-label .bar{width:4px;height:16px;background:var(--gold);border-radius:99px;flex-shrink:0}
+.section-label .txt{font-family:'Space Mono','Noto Sans Khmer',monospace;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
+.account-line{background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.account-line .idx{font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;margin-bottom:4px}
+.account-line .row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.account-line .val{font-size:13px;font-weight:700;color:var(--text);word-break:break-all;flex:1}
+.copy-btn-sm{flex-shrink:0;background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:5px 9px;font-size:10.5px;color:var(--gold);display:flex;align-items:center;gap:4px}
+.order-notice{font-size:11px;color:var(--text3);background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;margin:12px 0 14px;line-height:1.85;display:flex;align-items:flex-start;gap:8px}
+.order-notice b{color:var(--gold);font-family:'Space Mono',monospace}
+.tg-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;border-radius:12px;background:linear-gradient(135deg,#229ED9,#1a8fc0);color:#fff;font-weight:700;font-size:13px;margin-bottom:10px;box-shadow:0 4px 16px rgba(34,158,217,.3)}
+.btn-primary{width:100%;padding:12px;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+
+.empty-state{padding:70px 24px;text-align:center;color:var(--text2);font-size:13.5px;display:flex;flex-direction:column;align-items:center;gap:16px}
+.empty-state a{color:#000;background:linear-gradient(135deg,var(--gold),var(--gold2));padding:12px 26px;border-radius:999px;font-weight:800;font-family:'Syne',sans-serif}
+
+.toast{position:fixed;left:16px;right:16px;bottom:20px;z-index:200;padding:13px 16px;border-radius:14px;background:var(--bg3);color:var(--text);font-size:13px;text-align:center;font-weight:700;border:1px solid var(--border2);box-shadow:0 10px 30px rgba(0,0,0,.4);transform:translateY(120%);transition:transform .25s ease;max-width:408px;margin:0 auto}
+.toast.show{transform:translateY(0)}
+.toast.error{border-color:var(--red);color:var(--red)}
+.toast.success{border-color:var(--green);color:var(--green)}
+</style>
+</head>
+<body>
+<div id="page"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+(function(){
+"use strict";
+const ADMIN_TG = '@smos_sne1';
+
+function $(s,r){return (r||document).querySelector(s);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function toast(msg,kind){
+  const t=$("#toast"); t.innerHTML=msg; t.className="toast show"+(kind?" "+kind:"");
+  clearTimeout(toast._h); toast._h=setTimeout(()=>t.classList.remove("show"),3200);
+}
+function uid(prefix){ return (prefix||'')+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+function loadState2(){
+  try{ return JSON.parse(localStorage.getItem('kz_state2')||'null') || {products:[],stock:{},settings:{}}; }
+  catch(e){ return {products:[],stock:{},settings:{}}; }
+}
+function saveState2(s){
+  try{ localStorage.setItem('kz_state2', JSON.stringify(s)); }catch(e){ console.error('[saveState2]',e); }
+}
+function loadUserData(){
+  try{ return JSON.parse(localStorage.getItem('kz_userdata')||'null') || {users:[],orders:[]}; }
+  catch(e){ return {users:[],orders:[]}; }
+}
+function saveUserData(d){
+  try{ localStorage.setItem('kz_userdata', JSON.stringify(d)); }catch(e){ console.error('[saveUserData]',e); }
+}
+
+// ---- load handoff payload ----
+const params = new URLSearchParams(location.search);
+const orderId = params.get('order');
+let payload = null;
+try{ payload = orderId ? JSON.parse(sessionStorage.getItem('kz_checkout_'+orderId)||'null') : null; }catch(e){ payload=null; }
+
+const page = $('#page');
+if(!orderId || !payload){
+  page.innerHTML = `<div class="empty-state">
+    <div style="font-size:34px">⚠️</div>
+    <div>រកមិនឃើញព័ត៌មានការទូទាត់នេះទេ (session ផុតកំណត់ ឬបានបើកទំព័រនេះដោយផ្ទាល់)</div>
+    <a href="/">ត្រឡប់ទៅហាងវិញ</a>
+  </div>`;
+  return;
+}
+
+const s2 = loadState2();
+const settings = s2.settings || {};
+const tgUname = (settings.tgSupport || ADMIN_TG).replace('@','');
+
+page.innerHTML = `
+  <div class="topbar">
+    <a href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 6 9 12 15 18"/></svg>ត្រឡប់ក្រោយ</a>
+  </div>
+
+  <div class="section" id="state-qr">
+    <div class="khqr-card">
+      <div class="khqr-top">
+        <div class="khqr-top-row">
+          <div class="khqr-brand">KH<em>QR</em></div>
+          <div class="khqr-nbc"><span>NATIONAL BANK OF CAMBODIA</span><strong>NBC</strong></div>
+        </div>
+      </div>
+      <div class="khqr-merchant-bar">
+        <div class="khqr-merchant">${esc(settings.merchantName || 'Kairozen Store')}</div>
+        <div class="khqr-amount-row">
+          <span class="khqr-amount-num">${Number(payload.amount).toFixed(2)}</span>
+          <span class="khqr-amount-cur">USD</span>
+        </div>
+      </div>
+      <div class="khqr-qr-area"><div id="qr-area"><div class="khqr-qr-loading"><div class="qr-spinner"></div><span>Generating...</span></div></div></div>
+      <div class="khqr-account">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="#bbb"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>
+        <span>${esc(settings.bakongAccount || '')}</span>
+      </div>
+      <div class="khqr-banks">
+        <span class="bank-tag">ABA PAYWAY</span>
+      </div>
+      <div class="khqr-footer-bar"><span>Powered by NBC · Bakong</span><span>Scan to Pay</span></div>
+    </div>
+
+    <div style="padding:14px 2px">
+      <div class="status-pill">
+        <div class="lbl">Order: <b>${esc(orderId)}</b></div>
+        <div class="dot-wrap"><span class="dot" id="poll-dot"></span><span id="poll-label" style="color:var(--text3)">Waiting...</span></div>
+      </div>
+      <div id="deeplink-wrap" style="display:none">
+        <a class="deeplink-btn" id="deeplink-btn" href="#" target="_blank">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>
+          បើក ABA Mobile
+        </a>
+      </div>
+      <button class="btn-secondary" id="cancelBtn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="margin-right:5px"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <div id="state-success">
+    <div class="success-header">
+      <div class="success-check"><svg width="38" height="38" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+      <div class="success-title">Payment Confirmed!</div>
+      <div class="success-sub">គណនីអ្នកត្រូវបាន Deliver រួចហើយ!</div>
+    </div>
+    <div class="success-body">
+      <div class="section-label"><span class="bar"></span><span class="txt">Delivered Accounts</span></div>
+      <div id="delivery-lines"></div>
+      <div id="copy-all-wrap" style="display:none;margin-bottom:10px">
+        <button class="btn-secondary" id="copyAllBtn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="margin-right:5px"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+          Copy All
+        </button>
+      </div>
+      <div class="order-notice">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--gold)" style="flex-shrink:0;margin-top:1px"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+        <span>សូម Save account info! · Order: <b>${esc(orderId)}</b></span>
+      </div>
+      <a class="tg-btn" href="https://t.me/${esc(tgUname)}" target="_blank">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.01 9.47c-.149.658-.54.818-1.094.508l-3-2.21-1.448 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.884.751z"/></svg>
+        Chat Admin @${esc(tgUname)}
+      </a>
+      <button class="btn-primary" id="doneBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="margin-right:5px"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        Done ✓
+      </button>
+    </div>
+  </div>
+`;
+
+$('#cancelBtn').onclick = () => { silentPolling = false; location.href = '/'; };
+$('#doneBtn').onclick = () => { toast('Thank you! Enjoy your account!','success'); setTimeout(()=>location.href='/', 900); };
+
+function setPollStatus(st){
+  const dot=$('#poll-dot'), lbl=$('#poll-label');
+  if(!dot||!lbl) return;
+  dot.style.animation='none';
+  if(st==='waiting'){ dot.style.background='var(--text3)'; lbl.textContent='Waiting...'; }
+  else if(st==='polling'){ dot.style.background='var(--gold)'; lbl.textContent='Detecting payment...'; dot.style.animation='pollBlink 1s infinite'; }
+  else if(st==='paid'){ dot.style.background='var(--green)'; lbl.textContent='Paid!'; }
+}
+
+let silentPolling = false, pollAttempt = 0;
+const POLL_MAX = 100, POLL_INTERVAL = 3000;
+
+async function generateQR(){
+  const qrArea = $('#qr-area');
+  const url = (settings.khqrUrl || '').trim().replace(/\/+$/,'');
+  try{
+    const res = await fetch(url + '/generate', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ account: settings.bakongAccount, name: settings.merchantName,
+        city: settings.merchantCity, amount: parseFloat(payload.amount), currency:'USD', memo: orderId }),
+      signal: AbortSignal.timeout(15000), mode:'cors',
+    });
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error || 'Server error');
+    payload.md5 = data.md5;
+    if(data.deeplink){
+      const btn=$('#deeplink-btn'), wrap=$('#deeplink-wrap');
+      if(btn&&wrap){ btn.href=data.deeplink; wrap.style.display='block'; }
+    }
+    if(data.img){
+      const img = document.createElement('img');
+      img.src = data.img.startsWith('data:') ? data.img : 'data:image/png;base64,'+data.img;
+      qrArea.innerHTML=''; qrArea.appendChild(img);
+    }
+    setPollStatus('polling');
+    pollAttempt = 0;
+    if(data.md5){ silentPolling = true; silentPoll(data.md5); }
+  }catch(e){
+    console.warn('[generateQR]', e.message);
+    showOfflineFallback();
+  }
+}
+
+function showOfflineFallback(){
+  const acct = (settings.bakongAccount||'').trim();
+  const qrArea = $('#qr-area');
+  if(!acct){
+    qrArea.innerHTML = `<div style="padding:20px;text-align:center;font-size:12px;color:#999;line-height:1.8">⚙️<br>Admin: configure<br><strong>Bakong Account</strong><br>in Settings</div>`;
+    setPollStatus('waiting'); toast('Server offline — contact admin','error'); return;
+  }
+  const deeplink = `https://bakong.nbc.gov.kh/link/${encodeURIComponent(acct)}?amount=${parseFloat(payload.amount).toFixed(2)}&currency=USD&memo=${encodeURIComponent(orderId)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(deeplink)}`;
+  const img = document.createElement('img');
+  img.style.cssText='width:100%;max-width:220px;height:auto;display:block;border-radius:6px';
+  img.onload = () => { qrArea.innerHTML=''; qrArea.appendChild(img); };
+  img.onerror = () => { qrArea.innerHTML = `<div style="padding:14px;text-align:center;font-size:11px;color:#666">QR failed<br><a href="${deeplink}" style="color:#c9960a" target="_blank">Open Bakong</a></div>`; };
+  img.src = qrUrl;
+  const btn=$('#deeplink-btn'), wrap=$('#deeplink-wrap');
+  if(btn&&wrap){ btn.href=deeplink; wrap.style.display='block'; }
+  setPollStatus('waiting');
+  toast('⚠️ Server offline — QR offline · Manual confirm needed','error');
+}
+
+async function silentPoll(md5){
+  if(!silentPolling) return;
+  pollAttempt++;
+  if(pollAttempt > POLL_MAX){ silentPolling=false; setPollStatus('waiting'); return; }
+  try{
+    const url = (settings.khqrUrl||'').trim().replace(/\/+$/,'');
+    const res = await fetch(url+'/check_payment', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({md5}), signal: AbortSignal.timeout(8000), mode:'cors',
+    });
+    const data = await res.json();
+    if(data.paid){ silentPolling=false; setPollStatus('paid'); setTimeout(showSuccess, 400); return; }
+  }catch(e){ console.warn('[poll]', e.message); }
+  setTimeout(() => silentPoll(md5), POLL_INTERVAL);
+}
+
+function showSuccess(){
+  const data = loadState2();
+  const ud = loadUserData();
+  const p = (data.products||[]).find(x => x.id === payload.productId) || {};
+  let delivered = [];
+  if(p.delivery === 'auto'){
+    const arr = (data.stock[p.id] || []).filter(x => x.trim());
+    delivered = arr.splice(0, payload.qty);
+    data.stock[p.id] = arr;
+    saveState2(data);
+  } else {
+    delivered = ['[Manual — Admin will send via Telegram]'];
+  }
+  const newOrder = { id: orderId, productId: p.id, productName: p.name || payload.productName,
+    customerName: payload.customerName, username: payload.username,
+    amount: payload.amount, qty: payload.qty, status: 'completed', accounts: delivered, ts: Date.now() };
+  ud.orders = ud.orders || [];
+  ud.orders.unshift(newOrder);
+  saveUserData(ud);
+
+  const copySvg = '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>';
+  $('#delivery-lines').innerHTML = delivered.map((acc,i) => `
+    <div class="account-line">
+      <div class="idx">Account ${i+1}</div>
+      <div class="row">
+        <div class="val">${esc(acc)}</div>
+        <button class="copy-btn-sm" data-acc="${esc(acc)}">${copySvg} Copy</button>
+      </div>
+    </div>`).join('');
+  document.querySelectorAll('.copy-btn-sm').forEach(btn => {
+    btn.onclick = () => navigator.clipboard.writeText(btn.dataset.acc).then(() => toast('Copied!','success'));
+  });
+  window._lastDelivered = delivered;
+  $('#copy-all-wrap').style.display = delivered.length > 1 ? 'block' : 'none';
+
+  $('#state-qr').style.display = 'none';
+  $('#state-success').style.display = '';
+
+  sendTelegramNotification(newOrder);
+}
+
+$('#copyAllBtn') && ($('#copyAllBtn').onclick = () => {
+  navigator.clipboard.writeText((window._lastDelivered||[]).join('\n')).then(() => toast('All copied!','success'));
+});
+
+async function sendTelegramNotification(order){
+  const { tgToken, tgChat } = settings;
+  if(!tgToken || !tgChat) return;
+  const accs = (order.accounts||[]).filter(a=>!a.startsWith('[')).join('\n') || 'Manual delivery';
+  const msg = `New Order!\nID: ${order.id}\nProduct: ${order.productName} x${order.qty}\nUser: ${order.customerName} (@${order.username||'—'})\nAmount: $${order.amount}\nDelivered:\n${accs}`;
+  try{ await fetch('https://api.telegram.org/bot'+tgToken+'/sendMessage', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({chat_id:tgChat, text:msg})}); }catch(e){}
+}
+
+setPollStatus('waiting');
+generateQR();
+
+})();
+</script>
+</body>
+</html>

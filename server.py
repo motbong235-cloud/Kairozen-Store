@@ -103,13 +103,29 @@ def generate():
     if not data.get("ok"):
         return jsonify(ok=False, error=data.get("message") or "ABA error"), 502
 
+    # DEBUG: log every field ABA actually sent back so we can confirm the
+    # real image field name/format. Check Render → Logs for a line starting
+    # "[generate] ABA fields:" after a test purchase, and share it.
+    preview = {
+        k: (str(v)[:70] + "…" if isinstance(v, str) and len(str(v)) > 70 else v)
+        for k, v in data.items()
+    }
+    print(f"[generate] ABA fields: {preview}", flush=True)
+
     img_raw = data.get("qr_image") or data.get("card_image")
     img = _to_img_src(img_raw)
+    pay_url = data.get("pay_url")
+    if not img and pay_url:
+        # ABA didn't give us a ready-made image (or the field name differs from
+        # what we expect) — render pay_url ourselves as a scannable QR so the
+        # customer always sees something, regardless of ABA's exact response shape.
+        import urllib.parse
+        img = f"https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=10&data={urllib.parse.quote(pay_url)}"
 
     return jsonify(
         ok=True,
         md5=str(data.get("payment_id")),
-        deeplink=data.get("pay_url"),
+        deeplink=pay_url,
         img=img,
     )
 

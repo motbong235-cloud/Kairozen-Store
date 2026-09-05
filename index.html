@@ -1215,7 +1215,7 @@ body{animation:pageIn .4s ease}
 <div id="store-view">
   <nav>
     <div class="nav-inner">
-      <a class="logo" onclick="scrollToTop()">
+      <a class="logo" onclick="handleLogoTap()">
         <div class="logo-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="#080b0f"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
         <div>
           <div class="logo-text">Kairozen</div>
@@ -2466,6 +2466,23 @@ function ensureAdminSecret() {
     saveState();
   }
   return STATE.settings.adminSecret;
+}
+
+// Tap the logo 7 times fast (within 3s) to reveal the admin URL as a popup —
+// works on phones too, no F12/dev-tools needed. Anyone could technically try
+// this, but it's obscure enough for a small store (same trust level as the
+// URL itself).
+let _logoTapCount = 0, _logoTapTimer = null;
+function handleLogoTap() {
+  _logoTapCount++;
+  clearTimeout(_logoTapTimer);
+  _logoTapTimer = setTimeout(() => { _logoTapCount = 0; }, 3000);
+  if (_logoTapCount >= 7) {
+    _logoTapCount = 0;
+    alert('Admin URL:\n\n' + getAdminUrl() + '\n\nSave this somewhere safe — don\'t share it.');
+    return;
+  }
+  scrollToTop();
 }
 
 function getAdminUrl() {

@@ -76,6 +76,18 @@ def index():
     return send_from_directory(BASE_DIR, "index.html")
 
 
+@app.route("/login.html")
+@app.route("/login")
+def login():
+    return send_from_directory(BASE_DIR, "login.html")
+
+
+@app.route("/admin.html")
+@app.route("/admin")
+def admin():
+    return send_from_directory(BASE_DIR, "admin.html")
+
+
 @app.route("/checkout.html")
 @app.route("/checkout")
 def checkout():

@@ -7,7 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
-<title>Kairozen Store V35 — Digital Accounts Shop</title>
+<title>Kairozen Admin</title>
+<meta name="robots" content="noindex">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@300;400;500;600;700;800&family=Syne:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
@@ -418,7 +419,10 @@ h1 span{color:var(--gold)}
 .copy-btn-sm:hover{color:var(--gold);border-color:var(--border)}
 
 /* ── ADMIN PANEL ── */
-
+#admin-panel{display:none;min-height:100vh;touch-action:auto}
+#admin-panel.show{display:block}
+#admin-panel *{touch-action:auto}
+#admin-panel button{touch-action:manipulation}
 .admin-layout{display:flex;min-height:calc(100vh - 64px)}
 .admin-sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border2);padding:20px 0;flex-shrink:0;position:sticky;top:64px;height:calc(100vh - 64px);overflow-y:auto;touch-action:pan-y auto}
 .admin-nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;cursor:pointer;color:var(--text2);font-size:13px;transition:all .2s;border-left:3px solid transparent}
@@ -1223,6 +1227,15 @@ body{animation:pageIn .4s ease}
 
 <body>
 <div id="app">
+<div id="admin-lock-screen" style="display:none;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;gap:14px">
+  <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;box-shadow:0 8px 30px rgba(245,200,66,.35)">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="#080b0f"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+  </div>
+  <div style="font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:20px;font-weight:800;color:var(--text)">Admin Access Required</div>
+  <div style="font-size:13px;color:var(--text2);max-width:280px;line-height:1.7">លីងនេះត្រូវការសោសម្ងាត់ត្រឹមត្រូវ។ ចូលទៅ Kairozen Store ជា admin រួច Settings → Copy Admin URL ដើម្បីទទួល link ត្រឹមត្រូវ។</div>
+  <a href="/" style="margin-top:8px;padding:11px 24px;border-radius:999px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-size:12px;font-weight:700;text-decoration:none">← ត្រឡប់ទៅហាង</a>
+</div>
+<style>#store-view{display:none !important}</style>
 
 <!-- ════════════════════ STORE VIEW ════════════════════ -->
 <div id="store-view">
@@ -1402,8 +1415,347 @@ body{animation:pageIn .4s ease}
 
 </div><!-- /store-view -->
 
+<!-- ════════════════════ ADMIN PANEL ════════════════════ -->
+<div id="admin-panel">
+  <nav>
+    <div class="nav-inner">
+      <a class="logo">
+        <div class="logo-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="#080b0f"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96a7.01 7.01 0 00-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.47.47 0 00-.59.22L2.74 8.87a.47.47 0 00.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.47.47 0 00-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></div>
+        <div><div class="logo-text">Kairozen</div><div class="logo-tag">Admin Panel</div></div>
+      </a>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:12px;font-family:'Space Mono','Noto Sans Khmer',monospace;color:var(--text2)">Admin</span>
+        <button class="nav-btn" onclick="adminLogout()" style="background:var(--bg3);color:var(--text2);border:1px solid var(--border2)">Logout</button>
+      </div>
+    </div>
+  </nav>
+  <div class="admin-layout">
+    <div class="admin-sidebar">
+      <div class="admin-nav-sep">Menu</div>
+      <div class="admin-nav-item active" onclick="adminNav(this,'dashboard')"><span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></span>Dashboard</div>
+      <div class="admin-nav-item" onclick="adminNav(this,'products')"><span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 7h-4V5c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm-8-2h4v2h-4V5zm8 15H4V9h16v11z"/></svg></span>Products</div>
+      <div class="admin-nav-item" onclick="adminNav(this,'add-product')"><span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></span>Add Product</div>
+      <div class="admin-nav-item" onclick="adminNav(this,'stock')"><span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1 0-2 .9-2 2v3.01c0 .72.43 1.34 1 1.72V20c0 1.1 1.1 2 2 2h14c.9 0 2-.9 2-2V8.72c.57-.38 1-.99 1-1.71V4c0-1.1-1-2-2-2zm-5 12H9v-2h6v2zm5-8H4V4l16-.02V6z"/></svg></span>Stock Manager</div>
+      <div class="admin-nav-sep">Reports</div>
+      <div class="admin-nav-item" onclick="adminNav(this,'orders')"><span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg></span>Orders</div>
+      <div class="admin-nav-item" onclick="adminNav(this,'users')"><span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></span>Users</div>
+      <div class="admin-nav-sep">Settings</div>
+      <div class="admin-nav-item" onclick="adminNav(this,'settings')"><span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96a7.01 7.01 0 00-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.47.47 0 00-.59.22L2.74 8.87a.47.47 0 00.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.47.47 0 00-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></span>Settings</div>
+      <div class="admin-nav-item" onclick="adminLogout()"><span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg></span>Logout</div>
+    </div>
+    <div class="admin-main">
+
+      <!-- Dashboard -->
+      <div class="admin-page active" id="page-dashboard">
+        <h2 style="font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:20px;font-weight:800;margin-bottom:20px"><svg width="16" height="16" viewBox="0 0 24 24" fill="var(--gold)" style="vertical-align:-2px;flex-shrink:0;margin-right:6px;vertical-align:-3px"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>Dashboard</h2>
+        <div id="low-stock-warn" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--red);margin-bottom:16px;cursor:pointer" onclick="adminNav(null,'stock')"></div>
+        <div class="admin-stats" id="admin-stats-grid"></div>
+        <div class="admin-table-wrap">
+          <div class="admin-table-head"><span class="admin-table-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="var(--gold)" style="vertical-align:-2px;flex-shrink:0;margin-right:6px;vertical-align:-3px"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>Orders ថ្មីៗ</span></div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr><th>Order ID</th><th>User</th><th>Product</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+              <tbody id="recent-orders-tbody"><tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text2)">No orders yet</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Products list -->
+      <div class="admin-page" id="page-products">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+          <h2 style="font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:20px;font-weight:800"><svg width="16" height="16" viewBox="0 0 24 24" fill="var(--gold)" style="vertical-align:-2px;flex-shrink:0;margin-right:6px;vertical-align:-3px"><path d="M20 7h-4V5c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm-8-2h4v2h-4V5zm8 15H4V9h16v11z"/></svg>Products</h2>
+          <button class="admin-btn admin-btn-gold" onclick="adminNav(null,'add-product')">+ Add Product</button>
+        </div>
+        <div class="admin-table-wrap">
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="admin-products-tbody"><tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text2)">No products yet</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add product -->
+      <div class="admin-page" id="page-add-product">
+        <h2 style="font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:20px;font-weight:800;margin-bottom:20px" id="add-product-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="var(--gold)" style="vertical-align:-2px;flex-shrink:0;margin-right:6px;vertical-align:-3px"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Add Product</h2>
+
+        <div class="ap-section">
+          <div class="ap-section-title"><span class="num">1</span>ព័ត៌មានមូលដ្ឋាន</div>
+          <div class="admin-form-grid">
+            <div class="admin-form-group full"><label class="admin-label">Product Name / ឈ្មោះ</label><input class="admin-input" id="ap-name" placeholder="Netflix Premium 1 Month"></div>
+            <div class="admin-form-group"><label class="admin-label">Category / ប្រភេទ</label><input class="admin-input" id="ap-cat" placeholder="Streaming, Gaming..."></div>
+            <div class="admin-form-group"><label class="admin-label">Price (USD)</label><input class="admin-input" id="ap-price" type="number" step="0.01" min="0" placeholder="4.99"></div>
+            <div class="admin-form-group full"><label class="admin-label">Description / ការពិពណ៌នា</label><input class="admin-input" id="ap-desc" placeholder="Netflix Premium UHD · 1 Account · 1 Month"></div>
+            <div class="admin-form-group full"><label class="admin-label">Icon Key (auto SVG) <span style="color:var(--text3);font-size:9px">— e.g. netflix, spotify, gaming, vpn, software…</span></label><input class="admin-input" id="ap-icon" placeholder="netflix / spotify / gaming / vpn / software / streaming"></div>
+          </div>
+        </div>
+
+        <div class="ap-section">
+          <div class="ap-section-title"><span class="num">2</span>រូបភាព Product</div>
+          <div class="admin-form-group full"><label class="admin-label">Image URL (optional)</label><input class="admin-input" id="ap-img-url" placeholder="https://example.com/img.jpg"></div>
+          <div class="admin-form-group full" style="margin-top:14px">
+            <label class="admin-label">Upload Image <span style="color:var(--green);font-size:9px">● AUTO COMPRESS → ~60-120KB</span></label>
+            <div class="img-upload">
+              <input type="file" id="ap-img-file" accept="image/*" onchange="previewImage(this)">
+              <div class="img-upload-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="var(--text3)" style="vertical-align:-2px;flex-shrink:0;opacity:.5;vertical-align:0"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></div>
+              <div class="img-upload-text">Click or drag image · auto-compressed before save</div>
+              <img class="img-preview" id="img-preview-el" alt="Preview">
+            </div>
+            <button type="button" class="img-remove-btn" id="img-remove-btn" onclick="removeProductImage()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>Remove Image
+            </button>
+          </div>
+        </div>
+
+        <div class="ap-section">
+          <div class="ap-section-title"><span class="num">3</span>ការដឹកជញ្ជូន</div>
+          <div class="admin-form-group full">
+            <label class="admin-label">Delivery Type</label>
+            <select class="admin-select" id="ap-delivery">
+              <option value="auto"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>Auto Delivery (from stock)</option>
+              <option value="manual"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Manual Delivery</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="admin-btn admin-btn-gold" id="ap-save-btn" onclick="saveProduct()"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>Save Product</button>
+          <button class="admin-btn admin-btn-outline" onclick="resetProductForm()">Reset</button>
+        </div>
+        <input type="hidden" id="ap-edit-id">
+      </div>
+
+      <!-- Stock Manager -->
+      <div class="admin-page" id="page-stock">
+        <h2 style="font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:20px;font-weight:800;margin-bottom:20px"><svg width="16" height="16" viewBox="0 0 24 24" fill="var(--gold)" style="vertical-align:-2px;flex-shrink:0;margin-right:6px;vertical-align:-3px"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/></svg>Stock Manager</h2>
+        <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:24px;margin-bottom:20px">
+          <div class="admin-form-group" style="margin-bottom:14px">
+            <label class="admin-label">Select Product</label>
+            <select class="admin-select" id="stock-product-select" onchange="loadStockForProduct()">
+              <option value="">-- ជ្រើស Product --</option>
+            </select>
+          </div>
+          <div class="admin-form-group" style="margin-bottom:14px">
+            <label class="admin-label">Stock Accounts <span class="stock-count-badge" id="stock-count-badge">0 lines</span></label>
+            <textarea class="admin-textarea" id="stock-textarea" placeholder="username:password&#10;user2:pass2&#10;(1 account per line)" oninput="updateStockCount()" rows="8"></textarea>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="admin-btn admin-btn-gold" onclick="saveStock()"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>Save Stock</button>
+            <button class="admin-btn admin-btn-outline" onclick="clearStock()"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>Clear</button>
+          </div>
+        </div>
+        <div class="admin-table-wrap">
+          <div class="admin-table-head"><span class="admin-table-title">Stock Overview</span></div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock Left</th><th>Actions</th></tr></thead>
+              <tbody id="stock-overview-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Orders -->
+      <div class="admin-page" id="page-orders">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <h2 style="font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:20px;font-weight:800"><svg width="16" height="16" viewBox="0 0 24 24" fill="var(--gold)" style="vertical-align:-2px;flex-shrink:0;margin-right:6px;vertical-align:-3px"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>All Orders</h2>
+          <button class="admin-btn" onclick="exportOrdersCSV()" style="font-size:11px;padding:6px 14px">⬇ Export CSV</button>
+        </div>
+        <div class="admin-table-wrap">
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr><th>Order ID</th><th>User</th><th>Product</th><th>Amount</th><th>Status</th><th>Delivered</th><th>Date</th></tr></thead>
+              <tbody id="all-orders-tbody"><tr><td colspan="7" style="text-align:center;padding:28px;color:var(--text2)">No orders</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Users -->
+      <div class="admin-page" id="page-users">
+        <h2 style="font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:20px;font-weight:800;margin-bottom:20px"><svg width="16" height="16" viewBox="0 0 24 24" fill="var(--gold)" style="vertical-align:-2px;flex-shrink:0;margin-right:6px;vertical-align:-3px"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Users & Wallets</h2>
+
+        <!-- Admin Credit Wallet -->
+        <div class="admin-credit-box" style="margin-bottom:24px">
+          <div style="font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:15px;font-weight:800;color:var(--gold);margin-bottom:14px"><svg width="15" height="15" viewBox="0 0 24 24" fill="var(--gold)" style="vertical-align:-2px;flex-shrink:0;margin-right:6px;vertical-align:-3px"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>Credit User Wallet</div>
+          <div class="admin-form-grid">
+            <div class="admin-form-group full">
+              <label class="admin-label">ជ្រើស User <span style="color:var(--text3);font-size:10px">— ឬ click row ពី table ខាងក្រោម</span></label>
+              <select class="admin-select" id="credit-user-select" onchange="document.getElementById('credit-username').value=this.value;document.getElementById('credit-result').textContent=''">
+                <option value="">-- ជ្រើស User --</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-label">Username (manual)</label>
+              <input class="admin-input" id="credit-username" placeholder="username (without @)" oninput="syncCreditSelect(this.value)">
+            </div>
+            <div class="admin-form-group">
+              <label class="admin-label">Amount (USD)</label>
+              <input class="admin-input" id="credit-amount" type="number" min="0.5" step="0.5" placeholder="e.g. 5.00">
+            </div>
+            <div class="admin-form-group full">
+              <label class="admin-label">Note (optional)</label>
+              <input class="admin-input" id="credit-note" placeholder="e.g. Manual top-up, Refund...">
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:4px">
+            <button class="admin-btn" onclick="adminCreditWallet()"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Add Balance</button>
+            <button class="admin-btn" style="background:var(--bg3);color:var(--text2)" onclick="adminDeductWallet()"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M19 13H5v-2h14v2z"/></svg>Deduct Balance</button>
+          </div>
+          <div id="credit-result" style="font-size:12px;margin-top:8px;color:var(--gold)"></div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="admin-table-wrap">
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr><th>Username</th><th>Display Name</th><th>Wallet</th><th>Registered</th><th>Orders</th><th>Action</th></tr></thead>
+              <tbody id="users-tbody"><tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text2)">No users</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div class="admin-page" id="page-settings">
+        <h2 style="font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:20px;font-weight:800;margin-bottom:20px"><svg width="16" height="16" viewBox="0 0 24 24" fill="var(--gold)" style="vertical-align:-2px;flex-shrink:0;margin-right:6px;vertical-align:-3px"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96a7.01 7.01 0 00-1.62-.94l-.36-2.54A.484.484 0 0014 2h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.47.47 0 00-.59.22L2.74 8.87a.47.47 0 00.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.47.47 0 00-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>Settings</h2>
+        <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:24px;max-width:600px">
+          <div class="admin-form-grid">
+            <div class="admin-form-group full"><label class="admin-label">Store Name</label><input class="admin-input" id="s-store-name" value="Kairozen Store"></div>
+            <div class="admin-form-group full"><label class="admin-label">KHQR Server URL (leave blank = same domain)</label><input class="admin-input" id="s-khqr-url" value="" placeholder="e.g. https://your-app.onrender.com (blank = auto)"></div>
+            <div class="admin-form-group full"><label class="admin-label">Bakong Account</label><input class="admin-input" id="s-bakong-account" value="phanna_van@bkrt"></div>
+            <div class="admin-form-group"><label class="admin-label">Merchant Name</label><input class="admin-input" id="s-merchant-name" value="Kairozen Store"></div>
+            <div class="admin-form-group"><label class="admin-label">Merchant City</label><input class="admin-input" id="s-merchant-city" value="Phnom Penh"></div>
+            <div class="admin-form-group full">
+              <label class="admin-label">Admin URL (private — no password, keep this secret)</label>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <input class="admin-input" id="s-admin-url" readonly style="flex:1;min-width:220px;font-family:'Space Mono',monospace;font-size:11px" onclick="this.select()">
+                <button class="admin-btn admin-btn-outline" type="button" onclick="copyAdminUrl()">Copy</button>
+                <button class="admin-btn admin-btn-outline" type="button" onclick="showAdminQr()">QR</button>
+                <button class="admin-btn admin-btn-outline" type="button" onclick="regenerateAdminUrl()" style="color:var(--red)">Regenerate</button>
+              </div>
+              <div style="font-size:10px;color:var(--text3);margin-top:6px;line-height:1.6">បើក URL នេះ → ចូល admin ភ្លាមៗ (គ្មាន login)។ ចុច <b>QR</b> ដើម្បីបង្កើតរូប QR ស្កេនចូលបានផ្ទាល់ (save រូបទុកក្នុងទូរស័ព្ទ)។ កុំចែក URL/QR នេះឲ្យនរណាម្នាក់ផ្សេង។</div>
+            </div>
+            <div class="admin-form-group full"><label class="admin-label">Telegram Support (shown to customers)</label><input class="admin-input" id="s-tg-support" value="@smos_sne1"></div>
+            <div class="admin-form-group full"><label class="admin-label">Telegram Bot Token (order alerts)</label><input class="admin-input" id="s-tg-token" placeholder="123456:ABC..."></div>
+            <div class="admin-form-group full"><label class="admin-label">Telegram Chat ID</label><input class="admin-input" id="s-tg-chat" placeholder="-1001234567890"></div>
+            <div class="admin-form-group full"><label class="admin-label">Payment Confirm Wait (seconds)</label><input class="admin-input" id="s-confirm-wait" type="number" value="300" min="30"></div>
+            <div class="admin-form-group full"><label class="admin-label">Google Sign-In Client ID <span style="color:var(--text3);font-size:10px">— leave blank to hide Google login button</span></label><input class="admin-input" id="s-google-client-id" placeholder="xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com"></div>
+            <div class="admin-form-group full">
+              <label class="admin-label">Telegram Bot Username <span style="color:var(--text3);font-size:10px">— without @ · e.g. MyShopBot</span></label>
+              <input class="admin-input" id="s-tg-bot-username" placeholder="YourBotUsername">
+            </div>
+            <div class="admin-form-group full">
+              <label class="admin-label">Telegram Auth Domain <span style="color:var(--text3);font-size:10px">— domain ដែល host website · e.g. shop.example.com</span></label>
+              <input class="admin-input" id="s-tg-auth-domain" placeholder="shop.example.com">
+              <div style="font-size:10px;color:var(--text3);margin-top:6px;line-height:1.9;font-family:'Space Mono','Noto Sans Khmer',monospace;background:var(--bg3);border-radius:8px;padding:10px 12px;border:1px solid var(--border2)">
+                <strong style="color:var(--gold)">⚙️ Setup:</strong>
+                ① <strong style="color:var(--text)">@BotFather</strong> → /setdomain → paste domain ខាងលើ<br>
+                ② ដាក់ Bot Username + Domain → <strong style="color:var(--gold)">Save Settings</strong><br>
+                ③ User ចុច "Continue with Telegram" → Widget popup → auto-login ✓<br>
+                <span style="color:var(--text3)">⚠ ត្រូវការ https:// domain · localhost មិន work</span>
+              </div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <button class="admin-btn admin-btn-gold" onclick="saveSettings()"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>Save Settings</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div><!-- /admin-panel -->
+
 <!-- ════ MODALS ════ -->
 
+<!-- AUTH modal (Login / Register) -->
+<div class="modal-overlay" id="auth-modal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-head">
+      <div class="modal-title" id="auth-modal-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="var(--gold)" style="vertical-align:-2px;flex-shrink:0;margin-right:6px;vertical-align:-3px"><path d="M12.65 10A6 6 0 107 16H9v2h2v2h2v-2h2v-2h1l2.35-2.35A5.998 5.998 0 0012.65 10zM5 16c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg>ចូលគណនី</div>
+      <button class="modal-close" onclick="closeModal('auth-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">ចូល</button>
+        <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">ចុះឈ្មោះ</button>
+      </div>
+
+      <!-- ══ SOCIAL LOGIN BUTTONS (shared, always visible) ══ -->
+      <div id="social-login-wrap" style="display:flex;flex-direction:column;gap:10px;margin-bottom:4px">
+
+        <!-- Google -->
+        <div id="gsi-btn-wrap" style="display:none">
+          <button onclick="startGoogleSignIn()" class="social-btn social-btn-google">
+            <svg width="18" height="18" viewBox="0 0 48 48" style="flex-shrink:0"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+            ចូលដោយ Google
+          </button>
+        </div>
+
+        <!-- Telegram -->
+        <div id="tg-login-wrap" style="display:none">
+          <button onclick="startTelegramLogin()" class="social-btn social-btn-telegram">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white" style="flex-shrink:0"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.01 9.47c-.149.658-.54.818-1.094.508l-3-2.21-1.448 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.884.751z"/></svg>
+            ចូលដោយ Telegram
+          </button>
+        </div>
+
+        <!-- Divider (shown when ≥1 social button visible) -->
+        <div id="social-divider" style="display:none;align-items:center;gap:10px;color:var(--text2);font-size:11px;font-family:'Space Mono','Noto Sans Khmer',monospace">
+          <div style="flex:1;height:1px;background:var(--border2)"></div>
+          <span>— ឬ —</span>
+          <div style="flex:1;height:1px;background:var(--border2)"></div>
+        </div>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <div class="auth-form active" id="form-login">
+        <div class="form-group">
+          <label class="form-label">ឈ្មោះគណនី</label>
+          <input class="form-input" id="login-username" placeholder="username..." onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ពាក្យសម្ងាត់</label>
+          <input class="form-input" type="password" id="login-password" placeholder="password..." onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <button class="btn-primary auth-submit-btn" onclick="doLogin()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px"><path d="M12.65 10A6 6 0 107 16H9v2h2v2h2v-2h2v-2h1l2.35-2.35A5.998 5.998 0 0012.65 10zM5 16c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg>ចូល
+        </button>
+        <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--text2)">
+          មិនទាន់មាន account? <span style="color:var(--gold);cursor:pointer" onclick="switchAuthTab('register')">ចុះឈ្មោះឥឡូវ</span>
+        </div>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div class="auth-form" id="form-register">
+        <div class="form-group">
+          <label class="form-label">ឈ្មោះបង្ហាញ</label>
+          <input class="form-input" id="reg-displayname" placeholder="ឈ្មោះរបស់អ្នក...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ឈ្មោះគណនី</label>
+          <input class="form-input" id="reg-username" placeholder="username (a-z, 0-9)...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ពាក្យសម្ងាត់</label>
+          <input class="form-input" type="password" id="reg-password" placeholder="password...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">បញ្ជាក់ពាក្យសម្ងាត់</label>
+          <input class="form-input" type="password" id="reg-confirm" placeholder="confirm password..." onkeydown="if(event.key==='Enter')doRegister()">
+        </div>
+        <button class="btn-primary auth-submit-btn" onclick="doRegister()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px"><path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5L12 2z"/></svg>ចុះឈ្មោះ
+        </button>
+        <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--text2)">
+          មាន account ហើយ? <span style="color:var(--gold);cursor:pointer" onclick="switchAuthTab('login')">ចូល</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ADMIN LOGIN -->
 
@@ -2171,10 +2523,20 @@ function checkPrivateAdminUrl() {
   ensureAdminSecret();
   const m = (location.hash || '').match(/^#admin-(.+)$/);
   if (!m || m[1] !== STATE.settings.adminSecret) return;
-  // The admin panel no longer lives in this file — forward to the dedicated
-  // admin.html with the same secret, so any old bookmarked/shared link
-  // still works instead of hitting a removed #admin-panel element.
-  location.replace('/admin.html' + location.hash);
+
+  let adminUser = STATE.users.find(u => u._isAdmin);
+  if (!adminUser) {
+    adminUser = { username: 'admin', displayName: 'Admin', passwordHash: '', createdAt: Date.now(), wallet: 0, txns: [], _isAdmin: true };
+    STATE.users.push(adminUser);
+    saveState();
+  }
+  STATE.currentUser = { username: adminUser.username, displayName: adminUser.displayName };
+  sessionStorage.setItem('kz_user', JSON.stringify(STATE.currentUser));
+  sessionStorage.setItem('kz_admin_session', '1');
+  STATE.isAdmin = true;
+  // Scrub the secret out of the visible URL/history immediately.
+  history.replaceState(null, '', location.pathname + location.search);
+  setTimeout(() => { if (STATE.isAdmin) showAdminPanel(); }, 0);
 }
 
 // ── Version reset: wipe only products/stock, NEVER users/orders ──
@@ -2208,6 +2570,11 @@ function checkPrivateAdminUrl() {
 
 loadState();
 checkPrivateAdminUrl();
+if (!STATE.isAdmin) {
+  document.getElementById('admin-lock-screen').style.display = 'flex';
+} else {
+  document.getElementById('admin-lock-screen').style.display = 'none';
+}
 console.log('%c[Kairozen] Admin URL: ' + getAdminUrl(), 'color:#f5c842;font-weight:bold');
 
 // ════════════════════════════════════
@@ -2240,7 +2607,14 @@ function closeModal(id) { document.getElementById(id).classList.remove('show') }
 //  USER AUTH
 // ════════════════════════════════════
 function openAuth(tab='login') {
-  location.href = '/login.html' + (tab === 'register' ? '#register' : '');
+  switchAuthTab(tab);
+  document.getElementById('auth-modal').classList.add('show');
+  // Show/hide Google button based on whether Client ID is configured
+  initGSI();
+  setTimeout(()=>{
+    const f = tab==='login' ? 'login-username' : 'reg-displayname';
+    document.getElementById(f).focus();
+  }, 200);
 }
 
 function switchAuthTab(tab) {
@@ -2623,7 +2997,7 @@ const POLL_MAX = 100;
 
 async function proceedToPayment() {
   if (!STATE.activeOrder || !STATE.activeOrder.product) { toast('Error: no active order', 'error'); return; }
-  if (!STATE.currentUser) { toast('Please login first', 'error'); closeModal('order-modal'); location.href = '/login.html'; return; }
+  if (!STATE.currentUser) { toast('Please login first', 'error'); closeModal('order-modal'); openModal('auth-modal'); return; }
   const p = STATE.activeOrder.product;
   const qty = STATE.activeQty;
   const amount = (parseFloat(p.price) * qty).toFixed(2);
@@ -2842,16 +3216,8 @@ function closeDeliveryModal() { closeSuccessModal(); }
 //  ADMIN
 // ════════════════════════════════════
 function showAdminPanel() {
-  const panel = document.getElementById('admin-panel');
-  if (!panel) {
-    // We're on index.html, which no longer has an admin panel — an admin
-    // session persisted from admin.html (same-tab navigation shares
-    // sessionStorage) restored isAdmin=true here. Forward to the real page.
-    location.replace('/admin.html');
-    return;
-  }
   document.getElementById('store-view').style.display='none';
-  panel.style.display='block';
+  document.getElementById('admin-panel').style.display='block';
   renderAdminDashboard(); renderAdminProducts(); renderAdminOrders(); renderAdminUsers();
   renderStockOverview(); renderStockProductSelect(); loadSettingsForm();
 }

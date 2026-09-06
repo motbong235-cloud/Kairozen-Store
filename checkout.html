@@ -39,9 +39,21 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .topbar a{display:flex;align-items:center;gap:6px;color:var(--gold);font-weight:700;font-size:13px;font-family:'Syne','Noto Sans Khmer',sans-serif}
 .topbar a svg{width:15px;height:15px}
 
-.khqr-card{width:100%;margin-top:18px;background:linear-gradient(180deg,#171a21 0%,#12151b 100%);
-  border-radius:22px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.5),0 0 0 1px rgba(245,200,66,.12);position:relative}
-.khqr-top{padding:16px 18px 12px;border-bottom:1px dashed rgba(245,200,66,.25)}
+.step-track{display:flex;align-items:center;justify-content:center;gap:6px;padding:18px 20px 4px}
+.step-dot{width:26px;height:26px;border-radius:50%;background:var(--bg3);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:var(--text3);transition:all .3s}
+.step-dot.active{background:linear-gradient(135deg,var(--gold),var(--gold2));border-color:transparent;color:#000;box-shadow:0 0 14px rgba(245,200,66,.5)}
+.step-dot.done{background:var(--green);border-color:transparent;color:#fff}
+.step-line{width:24px;height:1.5px;background:var(--border2);transition:background .3s}
+.step-line.done{background:var(--green)}
+.step-label{text-align:center;font-family:'Space Mono','Noto Sans Khmer',monospace;font-size:9.5px;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;padding-bottom:10px}
+
+.khqr-card{width:100%;margin-top:14px;background:linear-gradient(180deg,#171a21 0%,#12151b 100%);
+  border-radius:22px;overflow:visible;box-shadow:0 14px 44px rgba(0,0,0,.55),0 0 0 1px rgba(245,200,66,.15);position:relative}
+.khqr-top{padding:16px 18px 12px;border-bottom:1px dashed rgba(245,200,66,.25);position:relative}
+.khqr-top::before,.khqr-top::after{content:'';position:absolute;bottom:-11px;width:22px;height:22px;
+  background:var(--bg);border-radius:50%;z-index:2}
+.khqr-top::before{left:-11px}
+.khqr-top::after{right:-11px}
 .khqr-top-row{display:flex;align-items:center;justify-content:space-between}
 .khqr-brand{font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:19px;font-weight:800;color:var(--text);letter-spacing:.2px;line-height:1}
 .khqr-brand em{color:var(--gold);font-style:normal}
@@ -53,7 +65,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .khqr-amount-row{display:flex;align-items:baseline;gap:6px;margin-top:6px}
 .khqr-amount-num{font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:30px;font-weight:800;color:var(--gold);line-height:1}
 .khqr-amount-cur{font-family:'Space Mono',monospace;font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.5px}
-.khqr-qr-area{background:#fff;margin:14px 14px 0;border-radius:14px;padding:16px;display:flex;align-items:center;justify-content:center;min-height:220px;box-shadow:0 4px 20px rgba(0,0,0,.25)}
+.khqr-qr-area{background:#fff;margin:14px 14px 0;border-radius:16px;padding:18px;display:flex;align-items:center;justify-content:center;min-height:220px;box-shadow:0 6px 24px rgba(0,0,0,.3);border:2px solid rgba(245,200,66,.35)}
 .khqr-qr-area img{width:200px!important;height:200px!important;object-fit:contain;display:block;border-radius:6px}
 .khqr-qr-loading{width:200px;height:200px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:#999;font-size:11px;font-family:'Space Mono','Noto Sans Khmer',monospace}
 .qr-spinner{width:28px;height:28px;border:3px solid #f0f0f0;border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
@@ -164,6 +176,14 @@ page.innerHTML = `
   </div>
 
   <div class="section" id="state-qr">
+    <div class="step-track">
+      <div class="step-dot active" id="step1">1</div>
+      <div class="step-line" id="line1"></div>
+      <div class="step-dot" id="step2">2</div>
+      <div class="step-line" id="line2"></div>
+      <div class="step-dot" id="step3">3</div>
+    </div>
+    <div class="step-label">ស្កេន QR &nbsp;•&nbsp; កំពុងផ្ទៀងផ្ទាត់ &nbsp;•&nbsp; ជោគជ័យ</div>
     <div class="khqr-card">
       <div class="khqr-top">
         <div class="khqr-top-row">
@@ -243,11 +263,18 @@ $('#doneBtn').onclick = () => { toast('Thank you! Enjoy your account!','success'
 
 function setPollStatus(st){
   const dot=$('#poll-dot'), lbl=$('#poll-label');
-  if(!dot||!lbl) return;
-  dot.style.animation='none';
-  if(st==='waiting'){ dot.style.background='var(--text3)'; lbl.textContent='Waiting...'; }
-  else if(st==='polling'){ dot.style.background='var(--gold)'; lbl.textContent='Detecting payment...'; dot.style.animation='pollBlink 1s infinite'; }
-  else if(st==='paid'){ dot.style.background='var(--green)'; lbl.textContent='Paid!'; }
+  const s1=$('#step1'), s2=$('#step2'), s3=$('#step3'), l1=$('#line1'), l2=$('#line2');
+  if(dot&&lbl){
+    dot.style.animation='none';
+    if(st==='waiting'){ dot.style.background='var(--text3)'; lbl.textContent='Waiting...'; }
+    else if(st==='polling'){ dot.style.background='var(--gold)'; lbl.textContent='Detecting payment...'; dot.style.animation='pollBlink 1s infinite'; }
+    else if(st==='paid'){ dot.style.background='var(--green)'; lbl.textContent='Paid!'; }
+  }
+  if(s1&&s2&&s3&&l1&&l2){
+    if(st==='waiting'){ s1.className='step-dot active'; s2.className='step-dot'; s3.className='step-dot'; l1.className='step-line'; l2.className='step-line'; }
+    else if(st==='polling'){ s1.className='step-dot done'; s2.className='step-dot active'; s3.className='step-dot'; l1.className='step-line done'; l2.className='step-line'; }
+    else if(st==='paid'){ s1.className='step-dot done'; s2.className='step-dot done'; s3.className='step-dot done'; l1.className='step-line done'; l2.className='step-line done'; }
+  }
 }
 
 let silentPolling = false, pollAttempt = 0;
@@ -272,7 +299,21 @@ async function generateQR(){
     }
     if(data.img){
       const img = document.createElement('img');
-      img.src = data.img.startsWith('data:') ? data.img : 'data:image/png;base64,'+data.img;
+      const raw = String(data.img).trim();
+      img.src = /^(data:|https?:\/\/)/i.test(raw) ? raw : 'data:image/png;base64,' + raw;
+      img.alt = 'KHQR';
+      img.onerror = () => {
+        // Primary image URL/data was bad — fall back to rendering the deeplink
+        // itself as a scannable QR, so the customer always sees something.
+        if (data.deeplink) {
+          const fallback = document.createElement('img');
+          fallback.alt = 'KHQR';
+          fallback.src = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=10&data=' + encodeURIComponent(data.deeplink);
+          qrArea.innerHTML = ''; qrArea.appendChild(fallback);
+        } else {
+          qrArea.innerHTML = `<div style="padding:20px;text-align:center;font-size:12px;color:#999">QR image failed to load — use the deeplink button below, or contact admin</div>`;
+        }
+      };
       qrArea.innerHTML=''; qrArea.appendChild(img);
     }
     setPollStatus('polling');

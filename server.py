@@ -1,46 +1,38 @@
 """
 Kairozen Store — Render deploy server
 --------------------------------------
-Serves index.html + checkout.html (unchanged) and implements /generate and
-/check_payment using a REAL ABA/Bakong integration via the bakong-khqr
-library (https://github.com/bsthen/bakong-khqr) — replacing the earlier
-khmer-system.com reseller proxy. That proxy's pay_url lived on
-khmer-system.com, a domain never registered with the ABA Mobile app, so it
-could never trigger a real app-open; this uses ABA's own Bakong account
-directly, the same fix applied to baby_server.py.
+Serves index.html + checkout.html and adds two tiny backend routes that the
+store's JS already calls: /generate and /check_payment. They proxy to ABA
+PayWay via khmer-system.com — same integration as baby_server.py's original
+aba_generate_qr()/aba_check_payment(), trimmed down to just what this
+storefront needs.
+
+Note: khmer-system.com's own hosted pay_url is NOT a domain registered with
+the ABA Mobile app, so it can't trigger a real "open the app" handoff on its
+own — only real QR scanning / the app's own deeplink handling works. That's
+a known limitation of this reseller, accepted here in exchange for not
+needing a Bakong Developer Token / RBK relay token / Cambodia-based hosting.
 
 Why a backend at all, if the store is "one HTML file"?
-Because your Bakong token is a secret. If it were pasted into the HTML/JS,
-anyone opening dev tools or "view source" could steal it and create
-fraudulent payment sessions on your account. This server is the only place
-that ever sees it — the browser never does.
-
-════════════════════════════════════════════════════════════════════════════
-IMPORTANT — read before deploying
-════════════════════════════════════════════════════════════════════════════
-1. Bakong blocks API calls from outside Cambodia (HTTP 403). Render is NOT
-   in Cambodia, so BAKONG_TOKEN below should be an RBK relay token from
-   https://bakongrelay.com (built specifically for servers outside
-   Cambodia), not a plain Bakong Developer Token — unless you host this
-   file on a Cambodia-based VPS instead of Render.
-2. You need a real Bakong Developer Token (or RBK token) — register at
-   https://api-bakong.nbc.gov.kh/register/ or https://bakongrelay.com.
-3. Your ABA account must be linked to Bakong and KYC-verified. The
-   account_id format is typically "your_username@abaa" — check ABA Mobile
-   → Bakong/KHQR profile section for your exact ID.
+Because ABA_API_KEY/ABA_MERCHANT_ID are secrets. If they were pasted into
+the HTML/JS, anyone opening dev tools or "view source" could steal them
+and create fraudulent payment sessions on your ABA account. This server
+is the only place that ever sees the key — the browser never does.
 
 Run locally:
-    pip install -r requirements.txt
-    BAKONG_TOKEN=xxx ABA_ACCOUNT_ID=you@abaa python server.py
+    pip install flask requests gunicorn --break-system-packages
+    ABA_API_KEY=xxx ABA_MERCHANT_ID=xxx python server.py
 
 Deploy on Render:
     Build Command : pip install -r requirements.txt
     Start Command : gunicorn server:app
-    Env vars      : BAKONG_TOKEN, ABA_ACCOUNT_ID
-                    (ABA_MERCHANT_NAME, ABA_MERCHANT_CITY optional)
+    Env vars      : ABA_API_KEY, ABA_MERCHANT_ID
+                    (ABA_BASE_URL optional, defaults to khmer-system.com)
 """
 
 import os
+import time
+import requests
 from flask import Flask, request, jsonify, send_from_directory
 
 try:
@@ -49,21 +41,22 @@ try:
 except ImportError:
     pass
 
-try:
-    from bakong_khqr import KHQR
-except ImportError:
-    KHQR = None  # /generate and /check_payment return a clear error until installed
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-BAKONG_TOKEN = os.environ.get("BAKONG_TOKEN", "")
-ABA_ACCOUNT_ID = os.environ.get("ABA_ACCOUNT_ID", "")  # e.g. "phanna_van@abaa"
-ABA_MERCHANT_NAME = os.environ.get("ABA_MERCHANT_NAME", "Kairozen Store")
-ABA_MERCHANT_CITY = os.environ.get("ABA_MERCHANT_CITY", "Phnom Penh")
+ABA_API_KEY = os.environ.get("ABA_API_KEY", "")
+ABA_MERCHANT_ID = os.environ.get("ABA_MERCHANT_ID", "")
+ABA_BASE_URL = os.environ.get("ABA_BASE_URL", "https://khmer-system.com")
+ABA_CREATE_URL = os.environ.get("ABA_CREATE_URL", f"{ABA_BASE_URL}/aba-api/generate-qr")
+ABA_CHECK_URL = os.environ.get("ABA_CHECK_URL", f"{ABA_BASE_URL}/aba-api/check-payment")
 
 app = Flask(__name__, static_folder=BASE_DIR, static_url_path="")
 
-khqr = KHQR(BAKONG_TOKEN) if (KHQR and BAKONG_TOKEN) else None
+_http = requests.Session()
+_http.headers.update({
+    # khmer-system.com blocks the default python-requests User-Agent (WAF).
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+})
 
 
 def _cors(resp):
@@ -91,79 +84,126 @@ def checkout():
 
 @app.route("/health")
 def health():
-    return jsonify(ok=True, bakong_configured=khqr is not None)
+    return jsonify(ok=True, aba_configured=bool(ABA_API_KEY and ABA_MERCHANT_ID))
 
 
 @app.route("/generate", methods=["POST", "OPTIONS"])
 def generate():
     if request.method == "OPTIONS":
         return jsonify(ok=True)
-    if not khqr:
-        return jsonify(ok=False, error=(
-            "Bakong not configured on server — set BAKONG_TOKEN env var "
-            "(see file header comment for how to get one)"
-        )), 500
+
+    if not ABA_API_KEY or not ABA_MERCHANT_ID:
+        return jsonify(ok=False, error="ABA_API_KEY / ABA_MERCHANT_ID not set on the server"), 500
 
     body = request.get_json(silent=True) or {}
-    account = (body.get("account") or ABA_ACCOUNT_ID or "").strip()
-    name = (body.get("name") or ABA_MERCHANT_NAME).strip()
-    city = (body.get("city") or ABA_MERCHANT_CITY).strip()
-    currency = (body.get("currency") or "USD").strip().upper()
-    memo = (body.get("memo") or "")[:25]  # Bakong bill_number has a length limit
     try:
         amount = round(float(body.get("amount")), 2)
     except (TypeError, ValueError):
         return jsonify(ok=False, error="Missing/invalid amount"), 400
-    if not account:
-        return jsonify(ok=False, error="Missing ABA/Bakong account_id (set it in Admin → Settings, or ABA_ACCOUNT_ID env var)"), 400
-    if amount <= 0:
-        return jsonify(ok=False, error="Amount must be greater than 0"), 400
+    memo = str(body.get("memo") or "order")
 
-    try:
-        qr_string = khqr.create_qr(
-            account_id=account, merchant_name=name, merchant_city=city,
-            amount=amount, currency=currency, bill_number=memo,
-            static=False, expiration=1,
-        )
-        md5 = khqr.generate_md5(qr_string)
-        img = khqr.qr_image(qr_string, format="base64_uri")
-    except Exception as e:  # noqa: BLE001
-        return jsonify(ok=False, error=f"KHQR generation failed: {e}"), 502
+    payload = {
+        "api_key": ABA_API_KEY,
+        "merchant_id": ABA_MERCHANT_ID,
+        "username": memo,
+        "amount": amount,
+    }
 
-    resp = {"ok": True, "md5": md5, "img": img}
+    data, err = _aba_post(ABA_CREATE_URL, payload, attempts=2)
+    if err:
+        return jsonify(ok=False, error=err), 502
+    if not data.get("ok"):
+        return jsonify(ok=False, error=data.get("message") or "ABA error"), 502
 
-    # Deeplink is optional — only included if you've configured app branding for it.
-    app_icon = os.environ.get("APP_ICON_URL", "")
-    app_name = os.environ.get("APP_NAME", "")
-    callback_url = os.environ.get("APP_DEEPLINK_CALLBACK", "")
-    if app_icon and app_name and callback_url:
-        try:
-            resp["deeplink"] = khqr.generate_deeplink(
-                qr=qr_string, appDeepLinkCallback=callback_url,
-                appIconUrl=app_icon, appName=app_name,
-            )
-        except Exception:  # noqa: BLE001
-            pass  # never fail the whole request over a missing nice-to-have
+    # DEBUG: log every field ABA actually sent back so we can confirm the
+    # real image field name/format. Check Render → Logs for a line starting
+    # "[generate] ABA fields:" after a test purchase, and share it.
+    preview = {
+        k: (str(v)[:70] + "…" if isinstance(v, str) and len(str(v)) > 70 else v)
+        for k, v in data.items()
+    }
+    print(f"[generate] ABA fields: {preview}", flush=True)
 
-    return jsonify(resp)
+    img_raw = data.get("qr_image") or data.get("card_image")
+    img = _to_img_src(img_raw)
+    pay_url = data.get("pay_url")
+    if not img and pay_url:
+        # ABA didn't give us a ready-made image (or the field name differs from
+        # what we expect) — render pay_url ourselves as a scannable QR so the
+        # customer always sees something, regardless of ABA's exact response shape.
+        import urllib.parse
+        img = f"https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=10&data={urllib.parse.quote(pay_url)}"
+
+    return jsonify(
+        ok=True,
+        md5=str(data.get("payment_id")),
+        deeplink=pay_url,
+        img=img,
+    )
 
 
 @app.route("/check_payment", methods=["POST", "OPTIONS"])
 def check_payment():
     if request.method == "OPTIONS":
         return jsonify(ok=True)
-    if not khqr:
-        return jsonify(paid=False, error="Bakong not configured on server"), 500
+
     body = request.get_json(silent=True) or {}
-    md5 = (body.get("md5") or "").strip()
-    if not md5:
+    payment_id = body.get("md5")
+    if not payment_id:
         return jsonify(paid=False)
-    try:
-        status = khqr.check_payment(md5)
-    except Exception as e:  # noqa: BLE001
-        print(f"[check_payment] error: {e}", flush=True)
+
+    data, err = _aba_post(ABA_CHECK_URL, {
+        "api_key": ABA_API_KEY,
+        "merchant_id": ABA_MERCHANT_ID,
+        "payment_id": payment_id,
+    }, attempts=1)
+    if err or not data:
         return jsonify(paid=False)
-    return jsonify(paid=(status == "PAID"))
+
+    paid = bool(data.get("ok")) and str(data.get("status", "")).upper() == "PAID"
+    return jsonify(paid=paid)
+
+
+def _aba_post(url, payload, attempts=1):
+    """POST to khmer-system.com. Returns (json_dict, None) on success or
+    (None, error_message) on failure. Retries once on 5xx/timeout, matching
+    baby_server.py's behavior."""
+    last_err = None
+    for i in range(attempts):
+        try:
+            r = _http.post(
+                url,
+                json=payload,
+                headers={"Content-Type": "application/json", "Accept": "application/json"},
+                timeout=20,
+            )
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            last_err = f"{type(e).__name__}: {e}"
+            time.sleep(1.5)
+            continue
+        try:
+            data = r.json()
+        except ValueError:
+            body_text = r.text.strip()
+            if body_text.lower().startswith(("<!doctype", "<html")):
+                last_err = f"HTTP {r.status_code} — got an HTML page back (WAF block or wrong URL)"
+            else:
+                last_err = f"HTTP {r.status_code} (non-JSON): {body_text[:200]}"
+            if r.status_code >= 500 and i < attempts - 1:
+                time.sleep(1.5)
+                continue
+            return None, last_err
+        return data, None
+    return None, last_err or "Unknown error"
+
+
+def _to_img_src(img_val):
+    if not img_val:
+        return None
+    s = str(img_val).strip()
+    if s.lower().startswith(("http://", "https://", "data:")):
+        return s
+    return f"data:image/png;base64,{s}"
 
 
 if __name__ == "__main__":

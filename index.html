@@ -481,6 +481,16 @@ tbody tr:last-child td{border:none}
 .empty-state-icon{font-size:36px;margin-bottom:10px;opacity:.4}
 .empty-state-text{font-size:14px;opacity:.6}
 
+/* ── Add Product form V2 — sectioned layout ── */
+.ap-section{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:20px 22px;margin-bottom:16px}
+.ap-section-title{display:flex;align-items:center;gap:8px;font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:13px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px}
+.ap-section-title .num{width:20px;height:20px;border-radius:50%;background:rgba(245,200,66,.15);color:var(--gold);font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.img-remove-btn{display:none;margin-top:8px;width:100%;padding:8px;border-radius:8px;background:var(--red2);border:1px solid rgba(239,68,68,.3);color:var(--red);font-size:11px;font-family:'Space Mono','Noto Sans Khmer',monospace;font-weight:700;align-items:center;justify-content:center;gap:5px}
+.img-remove-btn.show{display:flex}
+.spin-icon{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.admin-btn:disabled{opacity:.6;cursor:not-allowed}
+
 /* ── TOAST ── */
 .toast{position:fixed;bottom:96px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
 .toast-item{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--text);box-shadow:var(--shadow);pointer-events:all;animation:slideIn .3s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;gap:8px;max-width:320px}
@@ -1460,38 +1470,51 @@ body{animation:pageIn .4s ease}
       <!-- Add product -->
       <div class="admin-page" id="page-add-product">
         <h2 style="font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:20px;font-weight:800;margin-bottom:20px" id="add-product-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="var(--gold)" style="vertical-align:-2px;flex-shrink:0;margin-right:6px;vertical-align:-3px"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Add Product</h2>
-        <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:24px">
+
+        <div class="ap-section">
+          <div class="ap-section-title"><span class="num">1</span>ព័ត៌មានមូលដ្ឋាន</div>
           <div class="admin-form-grid">
             <div class="admin-form-group full"><label class="admin-label">Product Name / ឈ្មោះ</label><input class="admin-input" id="ap-name" placeholder="Netflix Premium 1 Month"></div>
             <div class="admin-form-group"><label class="admin-label">Category / ប្រភេទ</label><input class="admin-input" id="ap-cat" placeholder="Streaming, Gaming..."></div>
             <div class="admin-form-group"><label class="admin-label">Price (USD)</label><input class="admin-input" id="ap-price" type="number" step="0.01" min="0" placeholder="4.99"></div>
             <div class="admin-form-group full"><label class="admin-label">Description / ការពិពណ៌នា</label><input class="admin-input" id="ap-desc" placeholder="Netflix Premium UHD · 1 Account · 1 Month"></div>
             <div class="admin-form-group full"><label class="admin-label">Icon Key (auto SVG) <span style="color:var(--text3);font-size:9px">— e.g. netflix, spotify, gaming, vpn, software…</span></label><input class="admin-input" id="ap-icon" placeholder="netflix / spotify / gaming / vpn / software / streaming"></div>
-            <div class="admin-form-group full"><label class="admin-label">Product Image URL (optional)</label><input class="admin-input" id="ap-img-url" placeholder="https://example.com/img.jpg"></div>
-            <div class="admin-form-group full">
-              <label class="admin-label">Upload Image <span style="color:var(--green);font-size:9px">● AUTO COMPRESS → ~60-120KB</span></label>
-              <div class="img-upload">
-                <input type="file" id="ap-img-file" accept="image/*" onchange="previewImage(this)">
-                <div class="img-upload-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="var(--text3)" style="vertical-align:-2px;flex-shrink:0;opacity:.5;vertical-align:0"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></div>
-                <div class="img-upload-text">Click or drag image · auto-compressed before save</div>
-                <img class="img-preview" id="img-preview-el" alt="Preview">
-              </div>
-            </div>
-            <div class="admin-form-group full">
-              <label class="admin-label">Delivery Type</label>
-              <select class="admin-select" id="ap-delivery">
-                <option value="auto"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>Auto Delivery (from stock)</option>
-                <option value="manual"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Manual Delivery</option>
-              </select>
-            </div>
           </div>
-          <div class="divider"></div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="admin-btn admin-btn-gold" onclick="saveProduct()"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>Save Product</button>
-            <button class="admin-btn admin-btn-outline" onclick="resetProductForm()">Reset</button>
-          </div>
-          <input type="hidden" id="ap-edit-id">
         </div>
+
+        <div class="ap-section">
+          <div class="ap-section-title"><span class="num">2</span>រូបភាព Product</div>
+          <div class="admin-form-group full"><label class="admin-label">Image URL (optional)</label><input class="admin-input" id="ap-img-url" placeholder="https://example.com/img.jpg"></div>
+          <div class="admin-form-group full" style="margin-top:14px">
+            <label class="admin-label">Upload Image <span style="color:var(--green);font-size:9px">● AUTO COMPRESS → ~60-120KB</span></label>
+            <div class="img-upload">
+              <input type="file" id="ap-img-file" accept="image/*" onchange="previewImage(this)">
+              <div class="img-upload-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="var(--text3)" style="vertical-align:-2px;flex-shrink:0;opacity:.5;vertical-align:0"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></div>
+              <div class="img-upload-text">Click or drag image · auto-compressed before save</div>
+              <img class="img-preview" id="img-preview-el" alt="Preview">
+            </div>
+            <button type="button" class="img-remove-btn" id="img-remove-btn" onclick="removeProductImage()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>Remove Image
+            </button>
+          </div>
+        </div>
+
+        <div class="ap-section">
+          <div class="ap-section-title"><span class="num">3</span>ការដឹកជញ្ជូន</div>
+          <div class="admin-form-group full">
+            <label class="admin-label">Delivery Type</label>
+            <select class="admin-select" id="ap-delivery">
+              <option value="auto"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>Auto Delivery (from stock)</option>
+              <option value="manual"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Manual Delivery</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="admin-btn admin-btn-gold" id="ap-save-btn" onclick="saveProduct()"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>Save Product</button>
+          <button class="admin-btn admin-btn-outline" onclick="resetProductForm()">Reset</button>
+        </div>
+        <input type="hidden" id="ap-edit-id">
       </div>
 
       <!-- Stock Manager -->
@@ -3305,6 +3328,7 @@ function renderAdminProducts() {
 }
 
 function saveProduct() {
+  if(_imgCompressing){ toast('<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>សូមរង់ចាំ image compress រួចសិន', 'error'); return; }
   const name=document.getElementById('ap-name').value.trim(), cat=document.getElementById('ap-cat').value.trim();
   const price=document.getElementById('ap-price').value.trim(), desc=document.getElementById('ap-desc').value.trim();
   const icon=document.getElementById('ap-icon').value.trim(), imgUrl=document.getElementById('ap-img-url').value.trim();
@@ -3314,7 +3338,8 @@ function saveProduct() {
   const imgData=prev.classList.contains('show')?prev.src:null;
   if(editId){
     const idx=STATE.products.findIndex(p=>p.id===editId);
-    if(idx>=0) STATE.products[idx]={...STATE.products[idx],name,cat,price:parseFloat(price),desc,icon,imgUrl,imgData:imgData||STATE.products[idx].imgData,delivery};
+    const finalImgData = imgData || (_imgRemoved ? null : STATE.products[idx].imgData);
+    if(idx>=0) STATE.products[idx]={...STATE.products[idx],name,cat,price:parseFloat(price),desc,icon,imgUrl,imgData:finalImgData,delivery};
     toast('<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Product updated!','success');
   } else {
     STATE.products.push({id:uid('P'),name,cat,price:parseFloat(price),desc,icon,imgUrl,imgData,delivery,createdAt:Date.now()});
@@ -3326,13 +3351,14 @@ function saveProduct() {
 
 function editProduct(id) {
   const p=STATE.products.find(x=>x.id===id); if(!p)return;
+  _imgRemoved = false;
   adminNav(null,'add-product');
   document.getElementById('add-product-title').innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="var(--gold)" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>Edit Product';
   document.getElementById('ap-name').value=p.name; document.getElementById('ap-cat').value=p.cat||'';
   document.getElementById('ap-price').value=p.price; document.getElementById('ap-desc').value=p.desc||'';
   document.getElementById('ap-icon').value=p.icon||''; document.getElementById('ap-img-url').value=p.imgUrl||'';
   document.getElementById('ap-delivery').value=p.delivery||'auto'; document.getElementById('ap-edit-id').value=id;
-  if(p.imgData){document.getElementById('img-preview-el').src=p.imgData;document.getElementById('img-preview-el').classList.add('show');}
+  if(p.imgData){document.getElementById('img-preview-el').src=p.imgData;document.getElementById('img-preview-el').classList.add('show');document.getElementById('img-remove-btn')?.classList.add('show');}
 }
 
 function deleteProduct(id) {
@@ -3344,22 +3370,44 @@ function deleteProduct(id) {
 }
 
 function resetProductForm() {
+  _imgRemoved = false;
   ['ap-name','ap-cat','ap-price','ap-desc','ap-icon','ap-img-url','ap-edit-id'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('ap-delivery').value='auto';
   document.getElementById('add-product-title').innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="var(--gold)" style="vertical-align:-2px;flex-shrink:0;margin-right:6px;vertical-align:-3px"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Add Product';
   document.getElementById('img-preview-el').classList.remove('show'); document.getElementById('img-preview-el').src='';
+  document.getElementById('img-remove-btn')?.classList.remove('show');
 }
+
+let _imgCompressing = false;
+let _imgRemoved = false;
 
 function previewImage(input) {
   const f = input.files[0]; if (!f) return;
+  _imgRemoved = false;
+  _imgCompressing = true;
+  const saveBtn = document.getElementById('ap-save-btn');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.dataset.origText = saveBtn.innerHTML; saveBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px" class="spin-icon"><path d="M12 4V2A10 10 0 002 12h2a8 8 0 018-8z"/></svg>Compressing image...'; }
   compressImage(f, 400, 280, 0.72).then(dataUrl => {
     const el = document.getElementById('img-preview-el');
     el.src = dataUrl;
     el.classList.add('show');
-    // show size feedback
+    document.getElementById('img-remove-btn')?.classList.add('show');
     const kb = Math.round(dataUrl.length * 0.75 / 1024);
     toast(`<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>Image compressed → ~${kb}KB`, 'success');
+  }).catch(() => {
+    toast('<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>Image failed to load — try a different file', 'error');
+  }).finally(() => {
+    _imgCompressing = false;
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = saveBtn.dataset.origText; }
   });
+}
+
+function removeProductImage() {
+  _imgRemoved = true;
+  const el = document.getElementById('img-preview-el');
+  el.src = ''; el.classList.remove('show');
+  document.getElementById('img-remove-btn')?.classList.remove('show');
+  document.getElementById('ap-img-file').value = '';
 }
 
 /**

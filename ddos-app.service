@@ -1,0 +1,22 @@
+[Unit]
+Description=FastAPI app (behind Nginx, DDoS-protected)
+After=network.target redis-server.service
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/ddos-protection/app
+Environment="CHALLENGE_SECRET_KEY=REPLACE_WITH_A_LONG_RANDOM_SECRET"
+# 127.0.0.1 only — the app must be unreachable except through Nginx,
+# otherwise X-Real-IP in get_client_ip() can be spoofed by anyone who
+# connects to the app port directly.
+ExecStart=/opt/ddos-protection/venv/bin/gunicorn main:app \
+    -k uvicorn.workers.UvicornWorker \
+    --workers 4 \
+    --bind 127.0.0.1:8000 \
+    --timeout 15
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -12,7 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@300;400;500;600;700;800&family=Syne:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
-:root{--gold:#f5c842;--gold2:#e0a800;--gold3:rgba(245,200,66,0.12);--gold4:rgba(245,200,66,0.06);--bg:#06080c;--bg2:#0c1016;--bg3:#121820;--bg4:#181f2a;--text:#f0f4ff;--text1:#f0f4ff;--text2:#8b95a8;--text3:#4a5568;--green:#22c55e;--green2:rgba(34,197,94,0.12);--red:#ef4444;--red2:rgba(239,68,68,0.12);--blue:#3b82f6;--border:rgba(245,200,66,0.15);--border2:rgba(255,255,255,0.07);--shadow:0 20px 60px rgba(0,0,0,0.6);--radius:18px;--radius-sm:10px;--glow:0 0 40px rgba(245,200,66,0.15)}
+:root{--gold:#FF9F1C;--gold2:#E8890A;--gold3:rgba(255,159,28,0.14);--gold4:rgba(255,159,28,0.07);--bg:#0A0D16;--bg2:#10141F;--bg3:#161B2A;--bg4:#1C2235;--text:#F1F4FA;--text1:#F1F4FA;--text2:#8D96AC;--text3:#565F78;--green:#2DD4BF;--green2:rgba(45,212,191,0.14);--red:#FB5A5A;--red2:rgba(251,90,90,0.12);--blue:#5B8DEF;--border:rgba(255,159,28,0.16);--border2:rgba(255,255,255,0.07);--shadow:0 20px 60px rgba(0,0,0,0.6);--radius:18px;--radius-sm:10px;--glow:0 0 40px rgba(255,159,28,0.16)}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--text);font-family:'Noto Sans Khmer',sans-serif;min-height:100vh;overflow-x:hidden}
@@ -1227,7 +1227,7 @@ body{animation:pageIn .4s ease}
 
 <body>
 <div id="app">
-<div id="admin-lock-screen" style="display:none;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;gap:14px">
+<div id="admin-lock-screen" style="display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;gap:14px">
   <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;box-shadow:0 8px 30px rgba(245,200,66,.35)">
     <svg width="30" height="30" viewBox="0 0 24 24" fill="#080b0f"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
   </div>
@@ -2400,15 +2400,25 @@ let STATE = {
 //  kz_state2    → products, stock, settings (version-managed)
 // ══════════════════════════════════════════════════════
 
+// khqrUrl already doubles as the backend base URL for /generate + /check_payment —
+// reuse it for the shared-data API too so there's only one "server address" setting.
+function apiBase() {
+  return (STATE.settings.khqrUrl || '').trim().replace(/\/+$/, '') || location.origin;
+}
+
 function saveUserData() {
+  const payload = { users: STATE.users, orders: STATE.orders };
   try {
-    localStorage.setItem('kz_userdata', JSON.stringify({
-      users:  STATE.users,
-      orders: STATE.orders,
-    }));
+    localStorage.setItem('kz_userdata', JSON.stringify(payload));
   } catch(e) {
     console.error('[saveUserData]', e);
   }
+  // Push to the server so every device sees the same users/orders, not just
+  // this browser's local copy.
+  fetch(apiBase() + '/api/userdata', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch(e => console.error('[saveUserData:sync]', e));
 }
 
 function loadUserData() {
@@ -2443,13 +2453,24 @@ function saveState() {
       }));
     } catch(e2) {}
   }
+  // Push the shared catalog (products/stock/settings) to the server — this is
+  // the actual fix: every visitor now reads the SAME catalog instead of only
+  // ever seeing whatever got saved in their own browser's localStorage.
+  fetch(apiBase() + '/api/state2', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      secret: STATE.settings.adminSecret || '',
+      products: STATE.products, stock: STATE.stock, settings: STATE.settings,
+    }),
+  }).catch(e => console.error('[saveState:sync]', e));
   // Always save users+orders separately
   saveUserData();
 }
 
 function loadState() {
   try {
-    // 1. Load products/stock/settings
+    // 1. Load products/stock/settings from local cache first — instant paint,
+    // no flash of empty content while the network request below is in flight.
     const s = localStorage.getItem('kz_state2');
     if (s) {
       const p = JSON.parse(s);
@@ -2481,6 +2502,59 @@ function loadState() {
       }
     }
   } catch(e) { console.error('[loadState]', e); }
+
+  // 4. Pull the shared copy from the server in the background and patch STATE
+  // + re-render once it lands. This is what actually makes stock the admin
+  // added show up for everyone else, on their own devices.
+  syncFromServer();
+}
+
+async function syncFromServer() {
+  try {
+    const secretQS = STATE.isAdmin && STATE.settings.adminSecret
+      ? ('?secret=' + encodeURIComponent(STATE.settings.adminSecret)) : '';
+    const [catRes, userRes] = await Promise.all([
+      fetch(apiBase() + '/api/state2' + secretQS),
+      fetch(apiBase() + '/api/userdata' + secretQS),
+    ]);
+    if (catRes.ok) {
+      const d = await catRes.json();
+      if (d.ok) {
+        STATE.products = d.products || [];
+        STATE.stock    = d.stock || {};
+        STATE.settings = { ...STATE.settings, ...(d.settings || {}) };
+        localStorage.setItem('kz_state2', JSON.stringify({
+          products: STATE.products, stock: STATE.stock, settings: STATE.settings,
+        }));
+      }
+    }
+    if (userRes.ok) {
+      const d = await userRes.json();
+      if (d.ok) {
+        // Non-admin responses strip passwordHash — don't let that clobber a
+        // hash this device already had cached for its own logged-in user.
+        const existingByUser = {};
+        STATE.users.forEach(u => { existingByUser[u.username] = u; });
+        STATE.users = (d.users || []).map(u => ({
+          wallet: 0, txns: [], ...u,
+          passwordHash: u.passwordHash ?? existingByUser[u.username]?.passwordHash,
+        }));
+        STATE.orders = d.orders || [];
+        localStorage.setItem('kz_userdata', JSON.stringify({ users: STATE.users, orders: STATE.orders }));
+      }
+    }
+  } catch(e) {
+    console.error('[syncFromServer]', e); // offline — keep showing local cache
+    return;
+  }
+  // Re-render whatever's currently on screen with the fresh server data.
+  if (typeof renderProducts === 'function') renderProducts(STATE.currentFilter);
+  if (typeof renderStockOverview === 'function') renderStockOverview();
+  if (typeof renderStockProductSelect === 'function') renderStockProductSelect();
+  if (typeof renderAdminProducts === 'function') renderAdminProducts();
+  if (typeof renderAdminDashboard === 'function') renderAdminDashboard();
+  if (typeof renderAdminOrders === 'function') renderAdminOrders();
+  if (typeof renderAdminUsers === 'function') renderAdminUsers();
 }
 
 // ══════════════════════════════════════════════════════
@@ -2575,7 +2649,10 @@ if (!STATE.isAdmin) {
 } else {
   document.getElementById('admin-lock-screen').style.display = 'none';
 }
-console.log('%c[Kairozen] Admin URL: ' + getAdminUrl(), 'color:#f5c842;font-weight:bold');
+console.log('%c[Kairozen] Admin URL: ' + getAdminUrl(), 'color:#FF9F1C;font-weight:bold');
+if (new URLSearchParams(location.search).get('getadmin') === '1') {
+  alert('Admin URL:\n\n' + getAdminUrl() + '\n\nSave this somewhere safe — don\'t share it.');
+}
 
 // ════════════════════════════════════
 //  SEED — Real Products v10

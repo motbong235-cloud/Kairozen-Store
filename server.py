@@ -31,7 +31,9 @@ Deploy on Render:
 """
 
 import os
+import json
 import time
+import threading
 import requests
 from flask import Flask, request, jsonify, send_from_directory
 
@@ -50,6 +52,149 @@ ABA_CREATE_URL = os.environ.get("ABA_CREATE_URL", f"{ABA_BASE_URL}/aba-api/gener
 ABA_CHECK_URL = os.environ.get("ABA_CHECK_URL", f"{ABA_BASE_URL}/aba-api/check-payment")
 
 app = Flask(__name__, static_folder=BASE_DIR, static_url_path="")
+
+# ══════════════════════════════════════════════════════════════════
+#  SHARED STORE DATA — fixes "I add stock but customers can't see it"
+# ──────────────────────────────────────────────────────────────────
+# admin.html / index.html / login.html / checkout.html used to keep
+# products/stock/settings/users/orders ONLY in that browser's own
+# localStorage. Every visitor was really looking at their own private,
+# empty copy of the "store" — nothing was ever sent to a server, so
+# stock the admin added only ever showed up on the admin's own device.
+#
+# These two JSON files are now the single shared source of truth.
+# DATA_DIR should point at a Render Persistent Disk mount in
+# production (falls back to BASE_DIR for local/dev, where it's fine
+# for the file to live next to the code and reset on redeploy).
+# ══════════════════════════════════════════════════════════════════
+DATA_DIR = os.environ.get("DATA_DIR", BASE_DIR)
+CATALOG_FILE = os.path.join(DATA_DIR, "catalog.json")    # products, stock, settings
+USERDATA_FILE = os.path.join(DATA_DIR, "userdata.json")  # users, orders
+_data_lock = threading.Lock()
+
+# Settings fields it's safe to hand to a non-admin visitor. Everything else
+# (adminSecret, tgToken, tgChat — anything that could be abused) is stripped
+# out of the response unless the caller's ?secret= matches the stored one.
+SAFE_SETTINGS_KEYS = {
+    "storeName", "khqrUrl", "bakongAccount", "merchantName", "merchantCity",
+    "confirmWait", "tgSupport", "tgBotUsername", "tgAuthDomain",
+}
+
+
+def _read_json(path, default):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, ValueError):
+        return default
+
+
+def _write_json(path, data):
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False)
+    os.replace(tmp, path)  # atomic on POSIX — no half-written file on crash
+
+
+def _is_admin_request(secret):
+    catalog = _read_json(CATALOG_FILE, {"settings": {}})
+    stored_secret = (catalog.get("settings") or {}).get("adminSecret", "")
+    return bool(stored_secret) and secret == stored_secret
+
+
+@app.route("/api/state2", methods=["GET"])
+def get_state2():
+    with _data_lock:
+        data = _read_json(CATALOG_FILE, {"products": [], "stock": {}, "settings": {}})
+    settings = dict(data.get("settings") or {})
+    secret = request.args.get("secret", "")
+    is_admin = bool(settings.get("adminSecret")) and secret == settings.get("adminSecret")
+    if not is_admin:
+        settings = {k: v for k, v in settings.items() if k in SAFE_SETTINGS_KEYS}
+    return jsonify(ok=True, products=data.get("products", []), stock=data.get("stock", {}), settings=settings)
+
+
+@app.route("/api/state2", methods=["POST", "OPTIONS"])
+def post_state2():
+    if request.method == "OPTIONS":
+        return jsonify(ok=True)
+    body = request.get_json(silent=True) or {}
+    with _data_lock:
+        current = _read_json(CATALOG_FILE, {"products": [], "stock": {}, "settings": {}})
+        cur_secret = (current.get("settings") or {}).get("adminSecret", "")
+        sent_secret = body.get("secret", "")
+        # First-ever save (no secret stored yet) bootstraps trust from
+        # whatever the admin panel generated locally. After that, every
+        # write must present the matching secret.
+        if cur_secret and sent_secret != cur_secret:
+            return jsonify(ok=False, error="Invalid admin secret"), 403
+        new_data = {
+            "products": body.get("products", current.get("products", [])),
+            "stock": body.get("stock", current.get("stock", {})),
+            "settings": body.get("settings", current.get("settings", {})),
+        }
+        _write_json(CATALOG_FILE, new_data)
+    return jsonify(ok=True)
+
+
+@app.route("/api/userdata", methods=["GET"])
+def get_userdata():
+    with _data_lock:
+        data = _read_json(USERDATA_FILE, {"users": [], "orders": []})
+    secret = request.args.get("secret", "")
+    is_admin = _is_admin_request(secret)
+    users = data.get("users", [])
+    if not is_admin:
+        users = [{k: v for k, v in u.items() if k != "passwordHash"} for u in users]
+    return jsonify(ok=True, users=users, orders=data.get("orders", []))
+
+
+@app.route("/api/userdata", methods=["POST", "OPTIONS"])
+def post_userdata():
+    if request.method == "OPTIONS":
+        return jsonify(ok=True)
+    body = request.get_json(silent=True) or {}
+    with _data_lock:
+        current = _read_json(USERDATA_FILE, {"users": [], "orders": []})
+        new_data = {
+            "users": body.get("users", current.get("users", [])),
+            "orders": body.get("orders", current.get("orders", [])),
+        }
+        _write_json(USERDATA_FILE, new_data)
+    return jsonify(ok=True)
+
+
+@app.route("/api/deliver-stock", methods=["POST", "OPTIONS"])
+def deliver_stock():
+    """Atomically pop `qty` lines off a product's stock, server-side, under
+    the same lock used for every other write. This is what actually
+    prevents two customers who pay at nearly the same moment from both
+    being handed the SAME account — something a browser-local splice can
+    never guarantee once stock is shared across devices."""
+    if request.method == "OPTIONS":
+        return jsonify(ok=True)
+    body = request.get_json(silent=True) or {}
+    product_id = body.get("productId")
+    if not product_id:
+        return jsonify(ok=False, error="Missing productId"), 400
+    try:
+        qty = max(1, int(body.get("qty", 1)))
+    except (TypeError, ValueError):
+        qty = 1
+
+    with _data_lock:
+        current = _read_json(CATALOG_FILE, {"products": [], "stock": {}, "settings": {}})
+        stock = current.get("stock", {})
+        lines = [x for x in (stock.get(product_id) or []) if str(x).strip()]
+        if not lines:
+            return jsonify(ok=False, error="Out of stock"), 409
+        delivered = lines[:qty]
+        stock[product_id] = lines[qty:]
+        current["stock"] = stock
+        _write_json(CATALOG_FILE, current)
+
+    return jsonify(ok=True, delivered=delivered, remaining=len(stock[product_id]))
 
 _http = requests.Session()
 _http.headers.update({

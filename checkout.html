@@ -24,9 +24,9 @@ This keeps everything in sync for when the shopper navigates back to "/".
 <meta name="theme-color" content="#06080c">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Noto+Sans+Khmer:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-:root{--gold:#f5c842;--gold2:#e0a800;--bg:#06080c;--bg2:#0c1016;--bg3:#121820;--bg4:#181f2a;
-  --text:#f0f4ff;--text2:#8b95a8;--text3:#4a5568;--green:#22c55e;--red:#ef4444;
-  --border:rgba(245,200,66,0.15);--border2:rgba(255,255,255,0.07);}
+:root{--gold:#FF9F1C;--gold2:#E8890A;--bg:#0A0D16;--bg2:#10141F;--bg3:#161B2A;--bg4:#1C2235;
+  --text:#F1F4FA;--text2:#8D96AC;--text3:#565F78;--green:#2DD4BF;--red:#FB5A5A;
+  --border:rgba(255,159,28,0.16);--border2:rgba(255,255,255,0.07);}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--text);font-family:'Noto Sans Khmer',sans-serif;min-height:100vh;overflow-x:hidden;
@@ -149,6 +149,43 @@ function loadUserData(){
 function saveUserData(d){
   try{ localStorage.setItem('kz_userdata', JSON.stringify(d)); }catch(e){ console.error('[saveUserData]',e); }
 }
+function apiBase2(settingsObj){
+  return ((settingsObj&&settingsObj.khqrUrl)||'').trim().replace(/\/+$/,'') || location.origin;
+}
+// Pull the shared settings straight from the server before rendering the QR —
+// a customer landing here may never have visited index.html on this device,
+// so the local kz_state2 cache can be completely empty otherwise.
+async function fetchServerSettings(base){
+  try{
+    const res = await fetch(base + '/api/state2');
+    if(!res.ok) return null;
+    const d = await res.json();
+    return d.ok ? d : null;
+  }catch(e){ console.warn('[fetchServerSettings]', e); return null; }
+}
+// Ask the server to atomically hand out `qty` stock lines for a product.
+// This — not a local array splice — is what stops two customers who pay at
+// nearly the same moment from both being delivered the SAME account.
+async function deliverStockFromServer(base, productId, qty){
+  try{
+    const res = await fetch(base + '/api/deliver-stock', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ productId, qty }),
+    });
+    const d = await res.json();
+    return d.ok ? d.delivered : null;
+  }catch(e){ console.warn('[deliverStockFromServer]', e); return null; }
+}
+function pushOrderToServer(base, order){
+  const ud = loadUserData();
+  ud.orders = ud.orders || [];
+  ud.orders.unshift(order);
+  saveUserData(ud);
+  fetch(base + '/api/userdata', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(ud),
+  }).catch(e => console.error('[pushOrderToServer]', e));
+}
 
 // ---- load handoff payload ----
 const params = new URLSearchParams(location.search);
@@ -167,8 +204,14 @@ if(!orderId || !payload){
 }
 
 const s2 = loadState2();
-const settings = s2.settings || {};
+let settings = s2.settings || {};
 const tgUname = (settings.tgSupport || ADMIN_TG).replace('@','');
+// Refresh settings/khqrUrl from the server in the background — a shopper can
+// land on this checkout page without ever having loaded index.html on this
+// device, so the local kz_state2 cache may be empty or stale.
+fetchServerSettings(apiBase2(settings)).then(d => {
+  if (d) { settings = { ...settings, ...d.settings }; saveState2({ ...s2, settings }); }
+});
 
 page.innerHTML = `
   <div class="topbar">
@@ -361,25 +404,35 @@ async function silentPoll(md5){
   setTimeout(() => silentPoll(md5), POLL_INTERVAL);
 }
 
-function showSuccess(){
-  const data = loadState2();
-  const ud = loadUserData();
+async function showSuccess(){
+  const base = apiBase2(settings);
+  // Prefer the server's live catalog to decide delivery type + product name —
+  // the local cache may not even know about this product on this device.
+  const serverCat = await fetchServerSettings(base);
+  const data = serverCat ? { products: serverCat.products, stock: serverCat.stock, settings } : loadState2();
   const p = (data.products||[]).find(x => x.id === payload.productId) || {};
-  let delivered = [];
+  let delivered = null;
   if(p.delivery === 'auto'){
-    const arr = (data.stock[p.id] || []).filter(x => x.trim());
-    delivered = arr.splice(0, payload.qty);
-    data.stock[p.id] = arr;
-    saveState2(data);
+    // Atomic server-side pop — guarantees two near-simultaneous buyers never
+    // get handed the same account, which a local array splice cannot.
+    delivered = await deliverStockFromServer(base, p.id, payload.qty);
+    if(!delivered){
+      // Server unreachable / genuinely out of stock — fall back to the local
+      // cache so the customer isn't stuck, but this delivery won't be
+      // reflected on other devices until the next successful sync.
+      const local = loadState2();
+      const arr = (local.stock[p.id] || []).filter(x => x.trim());
+      delivered = arr.splice(0, payload.qty);
+      local.stock[p.id] = arr;
+      saveState2(local);
+    }
   } else {
     delivered = ['[Manual — Admin will send via Telegram]'];
   }
   const newOrder = { id: orderId, productId: p.id, productName: p.name || payload.productName,
     customerName: payload.customerName, username: payload.username,
     amount: payload.amount, qty: payload.qty, status: 'completed', accounts: delivered, ts: Date.now() };
-  ud.orders = ud.orders || [];
-  ud.orders.unshift(newOrder);
-  saveUserData(ud);
+  pushOrderToServer(base, newOrder);
 
   const copySvg = '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>';
   $('#delivery-lines').innerHTML = delivered.map((acc,i) => `

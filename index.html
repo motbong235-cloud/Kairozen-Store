@@ -367,6 +367,35 @@ h1 span{color:var(--gold)}
 
 .khqr-scan-hint{font-size:11px;color:var(--text3);text-align:center;line-height:1.7;font-family:'Noto Sans Khmer',sans-serif;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:8px 12px}
 
+/* ── Wallet deposit KHQR card — same red-ribbon "official KHQR" look as checkout.html ── */
+.wdep-khqr-card{width:100%;background:#eef1f6;border-radius:20px;overflow:hidden;
+  box-shadow:0 14px 44px rgba(0,0,0,.5),0 0 0 1px rgba(245,200,66,.15);position:relative}
+.wdep-khqr-header{position:relative;background:linear-gradient(135deg,#d32f2f,#8e1c1c);
+  padding:18px 20px 26px;clip-path:polygon(0 0,100% 0,100% 62%,88% 100%,0 100%)}
+.wdep-khqr-header-bar{width:40px;height:3px;background:rgba(255,255,255,.5);border-radius:3px;margin:0 auto 10px}
+.wdep-khqr-brand{text-align:center;font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:19px;font-weight:800;color:#fff;letter-spacing:1.5px}
+.wdep-khqr-brand em{font-style:normal;opacity:.92}
+.wdep-khqr-title-row{padding:12px 18px 0;text-align:center}
+.wdep-khqr-title{font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:13px;font-weight:800;color:#1c2333}
+.wdep-khqr-merchant-bar{padding:8px 18px 0;text-align:center}
+.wdep-khqr-merchant{font-family:'Noto Sans Khmer',sans-serif;font-size:12px;font-weight:600;color:#6b7280;letter-spacing:.2px}
+.wdep-khqr-amount-row{display:flex;align-items:baseline;justify-content:center;gap:6px;margin-top:4px}
+.wdep-khqr-amount-num{font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:28px;font-weight:800;color:#1c2333;line-height:1}
+.wdep-khqr-amount-cur{font-family:'Space Mono',monospace;font-size:10.5px;color:#8b93a3;font-weight:700;letter-spacing:.5px}
+.wdep-khqr-divider{border-top:1px dashed rgba(28,35,51,.18);margin:14px 18px 0}
+.wdep-khqr-qr-area{background:#fff;margin:14px 20px 0;border-radius:14px;padding:10px;display:flex;
+  align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.08);min-height:200px}
+.wdep-khqr-qr-area img{width:100%!important;height:auto!important;max-width:100%!important;
+  aspect-ratio:1/1;object-fit:contain;display:block;border-radius:4px}
+.wdep-khqr-qr-loading{width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:10px;color:#999;font-size:11px;font-family:'Space Mono','Noto Sans Khmer',monospace}
+.wdep-khqr-scan-label{text-align:center;font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:13.5px;font-weight:800;color:#1c2333;margin-top:12px}
+.wdep-khqr-account{padding:12px 18px 4px;display:flex;align-items:center;justify-content:center;gap:5px;font-family:'Space Mono',monospace;font-size:9px;color:#9aa1af}
+.wdep-khqr-banks{padding:0 18px 4px;display:flex;justify-content:center;gap:4px;flex-wrap:wrap}
+.wdep-bank-tag{background:rgba(211,47,47,.08);border:1px solid rgba(211,47,47,.22);border-radius:99px;padding:2px 8px;font-size:8px;font-family:'Space Mono',monospace;color:#d32f2f;font-weight:700}
+.wdep-khqr-footer-bar{padding:8px 18px 14px;display:flex;justify-content:center}
+.wdep-khqr-footer-bar span{font-family:'Space Mono',monospace;font-size:8px;color:#9aa1af;letter-spacing:.3px}
+
 /* ── Deposit verify/success/fail states V25 ── */
 .dep-verify-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;padding:12px 0}
 .dep-verify-spinner{width:52px;height:52px;border:3px solid var(--border2);border-top-color:var(--gold);border-radius:50%;animation:spin .9s linear infinite;box-shadow:0 0 20px rgba(245,200,66,.15)}
@@ -1594,35 +1623,38 @@ body{animation:pageIn .4s ease}
       <div id="wdep-step-1">
         <div class="khqr-payment-layout" style="gap:14px">
 
-          <!-- LEFT: KHQR Card -->
+          <!-- LEFT: KHQR Card (same red-ribbon design as checkout.html) -->
           <div style="flex:1;min-width:0">
-            <div class="khqr-card">
-              <div class="khqr-top">
-                <div class="khqr-top-row">
-                  <div class="khqr-brand">KH<em>QR</em></div>
-                  <div class="khqr-nbc"><span>NATIONAL BANK OF CAMBODIA</span><strong>NBC</strong></div>
+            <div class="wdep-khqr-card">
+              <div class="wdep-khqr-header">
+                <div class="wdep-khqr-header-bar"></div>
+                <div class="wdep-khqr-brand">KH<em>QR</em></div>
+              </div>
+              <div class="wdep-khqr-title-row">
+                <div class="wdep-khqr-title">ទូទាត់ដោយ KHQR</div>
+              </div>
+              <div class="wdep-khqr-merchant-bar">
+                <div class="wdep-khqr-merchant" id="wdep-merchant-name">Kairozen Store</div>
+                <div class="wdep-khqr-amount-row">
+                  <span class="wdep-khqr-amount-num" id="wdep-amount-num">0.00</span>
+                  <span class="wdep-khqr-amount-cur">USD</span>
                 </div>
               </div>
-              <div class="khqr-merchant-bar">
-                <div class="khqr-merchant" id="wdep-merchant-name">Kairozen Store</div>
-                <div class="khqr-amount-row">
-                  <span class="khqr-amount-num" id="wdep-amount-num">0.00</span>
-                  <span class="khqr-amount-cur">USD</span>
-                </div>
-              </div>
-              <div class="khqr-qr-area">
+              <div class="wdep-khqr-divider"></div>
+              <div class="wdep-khqr-qr-area">
                 <div id="wdep-qr-area">
-                  <div class="khqr-qr-loading"><div class="qr-spinner"></div><span>Generating...</span></div>
+                  <div class="wdep-khqr-qr-loading"><div class="qr-spinner"></div><span>Generating...</span></div>
                 </div>
               </div>
-              <div class="khqr-account">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="#bbb" style="flex-shrink:0"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>
+              <div class="wdep-khqr-scan-label">Scan to pay</div>
+              <div class="wdep-khqr-account">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="#9aa1af" style="flex-shrink:0"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>
                 <span id="wdep-account-text">phanna_van@bkrt</span>
               </div>
-              <div class="khqr-banks">
-                <span class="bank-tag">ABA PAYWAY</span>
+              <div class="wdep-khqr-banks">
+                <span class="wdep-bank-tag">ABA PAYWAY</span>
               </div>
-              <div class="khqr-footer-bar"><span>Powered by NBC · Bakong</span><span>Scan to Pay</span></div>
+              <div class="wdep-khqr-footer-bar"><span>Powered by NBC · Bakong</span></div>
             </div>
           </div>
 
@@ -3578,7 +3610,7 @@ async function startWalletDeposit() {
 
   const memo = 'TOPUP-' + (STATE.currentUser?.username || 'USER').toUpperCase() + '-' + Date.now();
   const area = document.getElementById('wdep-qr-area');
-  area.innerHTML = `<div class="khqr-qr-loading"><div class="qr-spinner"></div><span>Generating...</span></div>`;
+  area.innerHTML = `<div class="wdep-khqr-qr-loading"><div class="qr-spinner"></div><span>Generating...</span></div>`;
 
   const url = (STATE.settings.khqrUrl || '').trim().replace(/\/+$/, '');
 

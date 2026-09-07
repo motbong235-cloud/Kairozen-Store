@@ -3991,12 +3991,10 @@ function startTelegramLogin() {
   const botUsername = (STATE.settings.tgBotUsername || '').trim().replace(/^@/, '');
   const authDomain  = (STATE.settings.tgAuthDomain  || '').trim();
 
-  // Bot + Domain → official Widget popup
+  // Bot + Domain → official Widget popup (only verified login path)
   if (botUsername && authDomain) { _openTelegramWidget(botUsername, authDomain); return; }
-  // Bot only → deeplink + username fallback
-  if (botUsername) { _openTelegramAuthDirect(botUsername); return; }
-  // Nothing → username only
-  _openTelegramUsernameLogin();
+  // Not configured — no unverified username-only fallback
+  toast('Telegram login មិនទាន់ configure — សូមទាក់ទង admin', 'error');
 }
 
 // ── Official Telegram Login Widget (popup + redirect) ──
@@ -4017,18 +4015,6 @@ function _openTelegramWidget(botUsername, authDomain) {
         <span style="font-size:11px;color:var(--text3)">domain: ${authDomain}</span>
       </div>
       <div id="_tg_widget_btn_wrap" style="margin-bottom:14px;display:flex;justify-content:center"></div>
-      <div style="font-size:10px;color:var(--text3);margin-bottom:8px;font-family:'Space Mono','Noto Sans Khmer',monospace">— ឬប្រើ username ផ្ទាល់ —</div>
-      <div style="display:flex;align-items:center;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:0 14px;margin-bottom:10px" id="_tg_input_wrap">
-        <span style="color:var(--text3);font-size:14px;flex-shrink:0">@</span>
-        <input id="_tg_username_input" placeholder="your_telegram_username"
-          style="flex:1;background:none;border:none;padding:11px 8px;color:var(--text);font-size:14px;outline:none;-webkit-user-select:text;user-select:text"
-          onfocus="document.getElementById('_tg_input_wrap').style.borderColor='var(--gold)'"
-          onblur="document.getElementById('_tg_input_wrap').style.borderColor='var(--border2)'"
-          onkeydown="if(event.key==='Enter')_tgManualLogin()">
-      </div>
-      <button onclick="_tgManualLogin()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:12px;color:#080b0f;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:8px">
-        ✓ Login ជាមួយ Username
-      </button>
       <button onclick="document.getElementById('_tg_manual_modal').remove()" style="width:100%;padding:10px;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;color:var(--text2);font-size:12px;cursor:pointer">
         Cancel
       </button>
@@ -4054,97 +4040,6 @@ function _openTelegramWidget(botUsername, authDomain) {
   // Redirect URL: when popup blocked, TG redirects here with ?id=&username=&hash=...
   s.setAttribute('data-auth-url', 'https://' + authDomain + window.location.pathname);
   wrap.appendChild(s);
-}
-
-// Simple Telegram username login (no bot needed)
-function _openTelegramUsernameLogin() {
-  const existing = document.getElementById('_tg_manual_modal');
-  if (existing) existing.remove();
-
-  const modal = document.createElement('div');
-  modal.id = '_tg_manual_modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
-  modal.innerHTML = `
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:24px;max-width:360px;width:100%;text-align:center">
-      <div style="width:56px;height:56px;background:linear-gradient(135deg,#229ED9,#1a8fc0);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.01 9.47c-.149.658-.54.818-1.094.508l-3-2.21-1.448 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.884.751z"/></svg>
-      </div>
-      <div style="font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:17px;font-weight:800;margin-bottom:6px">Continue with Telegram</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.7;font-family:'Noto Sans Khmer',sans-serif">
-        បញ្ចូល Telegram username របស់អ្នក
-      </div>
-      <div style="display:flex;align-items:center;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:0 14px;margin-bottom:12px;transition:border-color .2s" id="_tg_input_wrap">
-        <span style="color:var(--text3);font-size:14px;flex-shrink:0">@</span>
-        <input id="_tg_username_input" placeholder="your_telegram_username"
-          style="flex:1;background:none;border:none;padding:12px 8px;color:var(--text);font-size:14px;outline:none;-webkit-user-select:text;user-select:text"
-          onfocus="document.getElementById('_tg_input_wrap').style.borderColor='var(--gold)'"
-          onblur="document.getElementById('_tg_input_wrap').style.borderColor='var(--border2)'"
-          onkeydown="if(event.key==='Enter')_tgManualLogin()">
-      </div>
-      <button onclick="_tgManualLogin()" style="width:100%;padding:13px;background:linear-gradient(135deg,#229ED9,#1a8fc0);border:none;border-radius:12px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.01 9.47c-.149.658-.54.818-1.094.508l-3-2.21-1.448 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.884.751z"/></svg>
-        Continue with Telegram
-      </button>
-      <button onclick="document.getElementById('_tg_manual_modal').remove()" style="width:100%;padding:11px;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;color:var(--text2);font-size:13px;cursor:pointer">
-        Cancel
-      </button>
-    </div>`;
-  document.body.appendChild(modal);
-  setTimeout(() => { const i = document.getElementById('_tg_username_input'); if(i) i.focus(); }, 200);
-}
-
-// Direct Telegram auth page (fallback when widget fails or file:// protocol)
-function _openTelegramAuthDirect(botUsername) {
-  const callbackUrl = encodeURIComponent(window.location.href.split('#')[0] + '#tgauth');
-  const authUrl = `https://t.me/${botUsername}?start=auth`;
-
-  // Show a modal with Telegram deep link + manual code entry
-  const existing = document.getElementById('_tg_manual_modal');
-  if (existing) existing.remove();
-
-  const modal = document.createElement('div');
-  modal.id = '_tg_manual_modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
-  modal.innerHTML = `
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:24px;max-width:360px;width:100%;text-align:center">
-      <div style="font-size:40px;margin-bottom:12px">✈️</div>
-      <div style="font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:17px;font-weight:800;margin-bottom:8px">Login via Telegram</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.7;font-family:'Noto Sans Khmer',sans-serif">
-        ចុច Open Telegram ខាងក្រោម<br>ហើយ start bot <strong style="color:var(--gold)">@${botUsername}</strong><br>
-        Bot នឹង send code មក → paste ខាងក្រោម
-      </div>
-      <a href="https://t.me/${botUsername}?start=login" target="_blank"
-         style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;border-radius:12px;background:linear-gradient(135deg,#229ED9,#1a8fc0);color:#fff;font-weight:700;font-size:14px;text-decoration:none;margin-bottom:16px;box-sizing:border-box">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.01 9.47c-.149.658-.54.818-1.094.508l-3-2.21-1.448 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.884.751z"/></svg>
-        Open Telegram → @${botUsername}
-      </a>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:10px;font-family:'Space Mono','Noto Sans Khmer',monospace">— ឬប្រើ Telegram username ផ្ទាល់ —</div>
-      <input id="_tg_username_input" placeholder="Telegram username (e.g. john_doe)"
-        style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:11px 14px;color:var(--text);font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;-webkit-user-select:text;user-select:text;touch-action:auto"
-        onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border2)'">
-      <button onclick="_tgManualLogin()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:12px;color:#080b0f;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px">
-        ✓ Login ជាមួយ Username
-      </button>
-      <button onclick="document.getElementById('_tg_manual_modal').remove()" style="width:100%;padding:10px;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;color:var(--text2);font-size:13px;cursor:pointer">
-        Cancel
-      </button>
-    </div>`;
-  document.body.appendChild(modal);
-}
-
-function _tgManualLogin() {
-  const input = document.getElementById('_tg_username_input');
-  const uname = (input ? input.value.trim().replace(/^@/, '') : '').toLowerCase();
-  if (!uname) { toast('សូម enter Telegram username', 'error'); return; }
-  document.getElementById('_tg_manual_modal')?.remove();
-  // Create user with telegram username (no photo, no ID verification — just username-based)
-  handleTelegramUser({
-    id: 'tg_' + uname,
-    username: uname,
-    first_name: uname,
-    last_name: '',
-    photo_url: '',
-  });
 }
 
 // Called when Telegram returns user data

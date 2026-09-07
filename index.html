@@ -2804,8 +2804,20 @@ async function generateQR(amount, memo) {
     }
     if (data.img) {
       const img = document.createElement('img');
-      img.src = data.img.startsWith('data:') ? data.img : 'data:image/png;base64,' + data.img;
+      const raw = String(data.img).trim();
+      img.src = /^(data:|https?:\/\/)/i.test(raw) ? raw : 'data:image/png;base64,' + raw;
       img.style.cssText = 'width:100%;max-width:232px;height:auto;display:block';
+      img.onerror = () => {
+        if (data.deeplink) {
+          const fallback = document.createElement('img');
+          fallback.alt = 'KHQR';
+          fallback.style.cssText = 'width:100%;max-width:232px;height:auto;display:block';
+          fallback.src = 'https://api.qrserver.com/v1/create-qr-code/?size=440x440&margin=10&data=' + encodeURIComponent(data.deeplink);
+          qrArea.innerHTML = ''; qrArea.appendChild(fallback);
+        } else {
+          _showPaymentOfflineQR(amount, memo);
+        }
+      };
       qrArea.innerHTML = ''; qrArea.appendChild(img);
     }
     STATE.serverOnline = true;
@@ -3629,8 +3641,23 @@ async function startWalletDeposit() {
       if (!data.ok) throw new Error(data.error || 'err');
       if (data.img) {
         const img = document.createElement('img');
-        img.src = data.img.startsWith('data:') ? data.img : 'data:image/png;base64,' + data.img;
+        const raw = String(data.img).trim();
+        img.src = /^(data:|https?:\/\/)/i.test(raw) ? raw : 'data:image/png;base64,' + raw;
         img.style.cssText = 'width:220px;height:220px;object-fit:contain;display:block;margin:0 auto';
+        img.onerror = () => {
+          // Bad/unrecognized image payload from the server — fall back to
+          // rendering the deeplink itself as a scannable QR so the customer
+          // always sees something instead of a broken-image icon.
+          if (data.deeplink) {
+            const fallback = document.createElement('img');
+            fallback.alt = 'KHQR';
+            fallback.style.cssText = 'width:220px;height:220px;object-fit:contain;display:block;margin:0 auto;border-radius:8px';
+            fallback.src = 'https://api.qrserver.com/v1/create-qr-code/?size=440x440&margin=10&data=' + encodeURIComponent(data.deeplink);
+            area.innerHTML = ''; area.appendChild(fallback);
+          } else {
+            _showWalletOfflineQR(amt, memo);
+          }
+        };
         area.innerHTML = ''; area.appendChild(img);
       }
       STATE.depositDeeplink = data.deeplink || null;

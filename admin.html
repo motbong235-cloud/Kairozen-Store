@@ -2502,11 +2502,14 @@ function loadState() {
       }
     }
   } catch(e) { console.error('[loadState]', e); }
-
-  // 4. Pull the shared copy from the server in the background and patch STATE
-  // + re-render once it lands. This is what actually makes stock the admin
-  // added show up for everyone else, on their own devices.
-  syncFromServer();
+  // NOTE: syncFromServer() is intentionally NOT called here anymore — it now
+  // runs from the bottom init sequence, AFTER checkPrivateAdminUrl() has had
+  // a chance to set STATE.isAdmin. Calling it here raced against that: on a
+  // brand-new admin session, syncFromServer()'s secretQS check ran before
+  // isAdmin flipped true, so the very first /api/userdata fetch went out
+  // unauthenticated and never got retried — admin never saw the full user
+  // list (e.g. Telegram-created accounts) until a manual page refresh
+  // happened to land after checkPrivateAdminUrl() had already set the flag.
 }
 
 async function syncFromServer() {
@@ -2644,6 +2647,12 @@ function checkPrivateAdminUrl() {
 
 loadState();
 checkPrivateAdminUrl();
+// Pull the shared copy from the server now that STATE.isAdmin is correctly
+// set (checkPrivateAdminUrl() runs synchronously off the locally-cached
+// users, so it's always resolved by this point) — this is what makes the
+// very first request from a fresh admin session include the admin secret,
+// so the full user list (including Telegram-created accounts) comes back.
+syncFromServer();
 if (!STATE.isAdmin) {
   document.getElementById('admin-lock-screen').style.display = 'flex';
 } else {

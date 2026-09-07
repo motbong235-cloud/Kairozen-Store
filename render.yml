@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: kairozen-store
+    env: python
+    plan: starter          # Persistent Disks require Starter or above — Free plan can't attach one
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn server:app
+    disk:
+      name: kairozen-data
+      mountPath: /var/data # must match the DATA_DIR value below
+      sizeGB: 1
+    envVars:
+      - key: DATA_DIR
+        value: /var/data
+      - key: ABA_API_KEY
+        sync: false         # set the real value in the Render dashboard, not here
+      - key: ABA_MERCHANT_ID
+        sync: false
+      - key: ABA_BASE_URL
+        value: https://khmer-system.com

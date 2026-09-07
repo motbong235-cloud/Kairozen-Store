@@ -28,11 +28,39 @@ Deploy on Render:
     Start Command : gunicorn server:app
     Env vars      : ABA_API_KEY, ABA_MERCHANT_ID
                     (ABA_BASE_URL optional, defaults to khmer-system.com)
+
+──────────────────────────────────────────────────────────────────────────
+PERSISTING DATA ACROSS DEPLOYS (read this if products/orders keep vanishing)
+──────────────────────────────────────────────────────────────────────────
+Render's web service filesystem is EPHEMERAL: every redeploy (and every
+restart on the Free plan) starts from a brand-new copy of your repo, so any
+file written next to server.py — including catalog.json/userdata.json — is
+gone on the next deploy. That's why "update the code" was quietly wiping
+the store's products/orders.
+
+The fix is a Render **Persistent Disk** (Dashboard → your service → Disks →
+Add Disk), which survives redeploys and restarts. Once attached:
+  1. Mount path: /var/data   (any path works, just be consistent)
+  2. Add an env var:  DATA_DIR = /var/data
+  3. Redeploy once — see the "migrated ... -> persistent disk" log line
+     below; it copies whatever catalog.json/userdata.json you already have
+     onto the new disk automatically, so you don't lose what's there now.
+
+A render.yaml is included alongside this file that provisions the disk and
+env var automatically if you deploy via "New > Blueprint" instead of
+clicking through the dashboard by hand.
+
+Note: Persistent Disks require a **paid** Render instance type (Starter or
+above) — the Free plan does not support attaching one at all. If you're on
+Free and want data to survive deploys/restarts, the disk approach here
+won't work; you'd need an external store instead (e.g. a free Postgres like
+Supabase/Neon). Ask if you want help wiring that up instead.
 """
 
 import os
 import json
 import time
+import shutil
 import threading
 import requests
 from flask import Flask, request, jsonify, send_from_directory
@@ -55,6 +83,7 @@ app = Flask(__name__, static_folder=BASE_DIR, static_url_path="")
 
 # ══════════════════════════════════════════════════════════════════
 #  SHARED STORE DATA — fixes "I add stock but customers can't see it"
+#  AND (this update) "I redeploy and everything is gone"
 # ──────────────────────────────────────────────────────────────────
 # admin.html / index.html / login.html / checkout.html used to keep
 # products/stock/settings/users/orders ONLY in that browser's own
@@ -63,14 +92,47 @@ app = Flask(__name__, static_folder=BASE_DIR, static_url_path="")
 # stock the admin added only ever showed up on the admin's own device.
 #
 # These two JSON files are now the single shared source of truth.
-# DATA_DIR should point at a Render Persistent Disk mount in
-# production (falls back to BASE_DIR for local/dev, where it's fine
-# for the file to live next to the code and reset on redeploy).
+# DATA_DIR points at a Render Persistent Disk mount in production so the
+# files survive redeploys — see the big comment at the top of this file
+# for the one-time setup. It falls back to BASE_DIR (next to the code)
+# for local dev, or if no disk has been attached yet, in which case data
+# will NOT survive a redeploy — a warning is printed below so that's
+# never a silent surprise.
 # ══════════════════════════════════════════════════════════════════
-DATA_DIR = os.environ.get("DATA_DIR", BASE_DIR)
+DATA_DIR = os.environ.get("DATA_DIR") or BASE_DIR
 CATALOG_FILE = os.path.join(DATA_DIR, "catalog.json")    # products, stock, settings
 USERDATA_FILE = os.path.join(DATA_DIR, "userdata.json")  # users, orders
 _data_lock = threading.Lock()
+
+
+def _migrate_legacy_data():
+    """One-time copy of catalog/userdata JSON sitting next to the code (from
+    before a persistent disk was attached, or from an earlier deploy) onto
+    DATA_DIR, so turning on a persistent disk doesn't wipe out data that's
+    already there. Safe to run every startup — it only ever copies a file
+    that doesn't already exist at the destination, never overwrites."""
+    if os.path.abspath(DATA_DIR) == os.path.abspath(BASE_DIR):
+        return
+    os.makedirs(DATA_DIR, exist_ok=True)
+    for fname in ("catalog.json", "userdata.json"):
+        legacy = os.path.join(BASE_DIR, fname)
+        target = os.path.join(DATA_DIR, fname)
+        if os.path.exists(legacy) and not os.path.exists(target):
+            shutil.copy2(legacy, target)
+            print(f"[startup] migrated {fname} -> persistent disk at {DATA_DIR}", flush=True)
+
+
+_migrate_legacy_data()
+
+if os.path.abspath(DATA_DIR) == os.path.abspath(BASE_DIR):
+    print(
+        "⚠️  [startup] DATA_DIR is not set to a persistent disk — catalog.json/"
+        "userdata.json live next to the code and WILL be wiped on the next "
+        "redeploy (and on every restart on the Free plan). Attach a Render "
+        "Persistent Disk and set DATA_DIR to its mount path to fix this "
+        "permanently — see the comment block at the top of server.py.",
+        flush=True,
+    )
 
 # Settings fields it's safe to hand to a non-admin visitor. Everything else
 # (adminSecret, tgToken, tgChat — anything that could be abused) is stripped

@@ -1,0 +1,14 @@
+[Unit]
+Description=DDoS traffic monitor (Nginx log tailer + Telegram alerts)
+After=network.target nginx.service
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/ddos-monitor.env
+ExecStart=/usr/bin/python3 /opt/ddos-protection/monitoring/monitor.py
+Restart=always
+RestartSec=5
+User=www-data
+
+[Install]
+WantedBy=multi-user.target

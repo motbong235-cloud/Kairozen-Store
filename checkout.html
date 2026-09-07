@@ -47,36 +47,44 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .step-line.done{background:var(--green)}
 .step-label{text-align:center;font-family:'Space Mono','Noto Sans Khmer',monospace;font-size:9.5px;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;padding-bottom:10px}
 
-.khqr-card{width:100%;margin-top:14px;background:linear-gradient(180deg,#171a21 0%,#12151b 100%);
-  border-radius:22px;overflow:visible;box-shadow:0 14px 44px rgba(0,0,0,.55),0 0 0 1px rgba(245,200,66,.15);position:relative}
-.khqr-top{padding:16px 18px 12px;border-bottom:1px dashed rgba(245,200,66,.25);position:relative}
-.khqr-top::before,.khqr-top::after{content:'';position:absolute;bottom:-11px;width:22px;height:22px;
-  background:var(--bg);border-radius:50%;z-index:2}
-.khqr-top::before{left:-11px}
-.khqr-top::after{right:-11px}
-.khqr-top-row{display:flex;align-items:center;justify-content:space-between}
-.khqr-brand{font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:19px;font-weight:800;color:var(--text);letter-spacing:.2px;line-height:1}
-.khqr-brand em{color:var(--gold);font-style:normal}
-.khqr-nbc{display:flex;flex-direction:column;align-items:flex-end;background:rgba(245,200,66,.1);border:1px solid rgba(245,200,66,.25);border-radius:8px;padding:3px 8px}
-.khqr-nbc span{font-family:'Space Mono',monospace;font-size:6px;color:var(--gold);letter-spacing:.6px;text-transform:uppercase}
-.khqr-nbc strong{font-family:'Space Mono',monospace;font-size:8.5px;font-weight:700;color:var(--gold);letter-spacing:.6px}
-.khqr-merchant-bar{padding:14px 18px 10px}
-.khqr-merchant{font-family:'Noto Sans Khmer',sans-serif;font-size:12.5px;font-weight:600;color:var(--text2);letter-spacing:.2px}
-.khqr-amount-row{display:flex;align-items:baseline;gap:6px;margin-top:6px}
-.khqr-amount-num{font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:30px;font-weight:800;color:var(--gold);line-height:1}
-.khqr-amount-cur{font-family:'Space Mono',monospace;font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.5px}
-.khqr-qr-area{background:#fff;margin:14px 14px 0;border-radius:16px;padding:18px;display:flex;align-items:center;justify-content:center;min-height:220px;box-shadow:0 6px 24px rgba(0,0,0,.3);border:2px solid rgba(245,200,66,.35)}
-.khqr-qr-area img{width:200px!important;height:200px!important;object-fit:contain;display:block;border-radius:6px}
-.khqr-qr-loading{width:200px;height:200px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:#999;font-size:11px;font-family:'Space Mono','Noto Sans Khmer',monospace}
+/* ══ KHQR CARD — light card, red ribbon header (KHQR standard look) ══ */
+.khqr-card{width:100%;margin-top:14px;background:#eef1f6;border-radius:20px;overflow:hidden;
+  box-shadow:0 14px 44px rgba(0,0,0,.55),0 0 0 1px rgba(245,200,66,.15);position:relative}
+.khqr-header{position:relative;background:linear-gradient(135deg,#d32f2f,#8e1c1c);
+  padding:20px 20px 30px;clip-path:polygon(0 0,100% 0,100% 62%,88% 100%,0 100%)}
+.khqr-header-bar{width:44px;height:3px;background:rgba(255,255,255,.5);border-radius:3px;margin:0 auto 12px}
+.khqr-brand{text-align:center;font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:21px;font-weight:800;color:#fff;letter-spacing:1.5px}
+.khqr-brand em{font-style:normal;opacity:.92}
+.khqr-title-row{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 0}
+.khqr-title{font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:14px;font-weight:800;color:#1c2333}
+.khqr-timer{display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#1c2333;cursor:pointer}
+.khqr-timer-ring{width:16px;height:16px;transform:rotate(-90deg)}
+.khqr-timer-ring circle{fill:none;stroke-width:2.5}
+.khqr-timer-ring .bg{stroke:rgba(28,35,51,.15)}
+.khqr-timer-ring .fg{stroke:var(--green);stroke-linecap:round;transition:stroke-dashoffset 1s linear}
+.khqr-timer.expired{color:var(--red)}
+.khqr-timer.expired .khqr-timer-ring .fg{stroke:var(--red)}
+.khqr-merchant-bar{padding:10px 18px 0;text-align:center}
+.khqr-merchant{font-family:'Noto Sans Khmer',sans-serif;font-size:12.5px;font-weight:600;color:#6b7280;letter-spacing:.2px}
+.khqr-amount-row{display:flex;align-items:baseline;justify-content:center;gap:6px;margin-top:6px}
+.khqr-amount-num{font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:32px;font-weight:800;color:#1c2333;line-height:1}
+.khqr-amount-cur{font-family:'Space Mono',monospace;font-size:11px;color:#8b93a3;font-weight:700;letter-spacing:.5px}
+.khqr-divider{border-top:1px dashed rgba(28,35,51,.18);margin:16px 18px 0}
+.khqr-qr-area{background:#fff;margin:16px 22px 0;border-radius:14px;padding:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.khqr-qr-area img{width:100%!important;height:auto!important;max-width:100%!important;aspect-ratio:1/1;object-fit:contain;display:block;border-radius:4px}
+.khqr-qr-loading{width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:#999;font-size:11px;font-family:'Space Mono','Noto Sans Khmer',monospace}
 .qr-spinner{width:28px;height:28px;border:3px solid #f0f0f0;border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes pollBlink{0%,100%{opacity:1}50%{opacity:.25}}
 @keyframes fadeInUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-.khqr-account{padding:12px 18px 4px;display:flex;align-items:center;gap:5px;font-family:'Space Mono',monospace;font-size:9.5px;color:var(--text3)}
-.khqr-banks{padding:6px 18px 4px;display:flex;gap:4px;flex-wrap:wrap}
-.bank-tag{background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);border-radius:99px;padding:2px 8px;font-size:8px;font-family:'Space Mono',monospace;color:var(--gold);font-weight:700}
-.khqr-footer-bar{padding:10px 18px 14px;display:flex;justify-content:space-between}
-.khqr-footer-bar span{font-family:'Space Mono',monospace;font-size:8px;color:var(--text3);letter-spacing:.3px}
+.khqr-scan-label{text-align:center;font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:15px;font-weight:800;color:#1c2333;margin-top:14px}
+.khqr-or{text-align:center;font-size:11px;color:#9aa1af;margin-top:4px;font-family:'Space Mono',monospace}
+.khqr-download-btn{display:flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 0;background:none;border:none;color:var(--green);font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:13.5px;font-weight:800;cursor:pointer}
+.khqr-download-hint{text-align:center;font-size:10.5px;color:#9aa1af;line-height:1.6;margin:6px 18px 0;font-family:'Noto Sans Khmer',sans-serif}
+.khqr-account{padding:14px 18px 4px;display:flex;align-items:center;justify-content:center;gap:5px;font-family:'Space Mono',monospace;font-size:9.5px;color:#9aa1af}
+.khqr-footer-bar{padding:10px 18px 16px;display:flex;justify-content:center}
+.khqr-footer-bar span{font-family:'Space Mono',monospace;font-size:8px;color:#9aa1af;letter-spacing:.3px}
+
 
 .section{padding:16px 16px 0}
 .status-pill{display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:9px 14px;margin-bottom:10px}
@@ -228,10 +236,15 @@ page.innerHTML = `
     </div>
     <div class="step-label">ស្កេន QR &nbsp;•&nbsp; កំពុងផ្ទៀងផ្ទាត់ &nbsp;•&nbsp; ជោគជ័យ</div>
     <div class="khqr-card">
-      <div class="khqr-top">
-        <div class="khqr-top-row">
-          <div class="khqr-brand">KH<em>QR</em></div>
-          <div class="khqr-nbc"><span>NATIONAL BANK OF CAMBODIA</span><strong>NBC</strong></div>
+      <div class="khqr-header">
+        <div class="khqr-header-bar"></div>
+        <div class="khqr-brand">KH<em>QR</em></div>
+      </div>
+      <div class="khqr-title-row">
+        <div class="khqr-title">ទូទាត់ដោយ KHQR</div>
+        <div class="khqr-timer" id="khqr-timer" title="ចុចដើម្បីបង្កើត QR ថ្មី">
+          <svg class="khqr-timer-ring" viewBox="0 0 20 20"><circle class="bg" cx="10" cy="10" r="8"></circle><circle class="fg" id="khqr-timer-ring-fg" cx="10" cy="10" r="8" stroke-dasharray="50.24" stroke-dashoffset="0"></circle></svg>
+          <span id="khqr-timer-txt">3:00</span>
         </div>
       </div>
       <div class="khqr-merchant-bar">
@@ -241,16 +254,22 @@ page.innerHTML = `
           <span class="khqr-amount-cur">USD</span>
         </div>
       </div>
+      <div class="khqr-divider"></div>
       <div class="khqr-qr-area"><div id="qr-area"><div class="khqr-qr-loading"><div class="qr-spinner"></div><span>Generating...</span></div></div></div>
+      <div class="khqr-scan-label">Scan to pay</div>
+      <div class="khqr-or">or</div>
+      <button type="button" class="khqr-download-btn" id="khqr-download-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
+        Download QR
+      </button>
+      <div class="khqr-download-hint">ហើយ upload ទៅកាន់ Mobile Banking app<br>ណាមួយដែលគាំទ្រ KHQR</div>
       <div class="khqr-account">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="#bbb"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="#9aa1af"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>
         <span>${esc(settings.bakongAccount || '')}</span>
       </div>
-      <div class="khqr-banks">
-        <span class="bank-tag">ABA PAYWAY</span>
-      </div>
-      <div class="khqr-footer-bar"><span>Powered by NBC · Bakong</span><span>Scan to Pay</span></div>
+      <div class="khqr-footer-bar"><span>Powered by NBC · Bakong</span></div>
     </div>
+
 
     <div style="padding:14px 2px">
       <div class="status-pill">
@@ -351,7 +370,7 @@ async function generateQR(){
         if (data.deeplink) {
           const fallback = document.createElement('img');
           fallback.alt = 'KHQR';
-          fallback.src = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=10&data=' + encodeURIComponent(data.deeplink);
+          fallback.src = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=' + encodeURIComponent(data.deeplink);
           qrArea.innerHTML = ''; qrArea.appendChild(fallback);
         } else {
           qrArea.innerHTML = `<div style="padding:20px;text-align:center;font-size:12px;color:#999">QR image failed to load — use the deeplink button below, or contact admin</div>`;
@@ -362,10 +381,63 @@ async function generateQR(){
     setPollStatus('polling');
     pollAttempt = 0;
     if(data.md5){ silentPolling = true; silentPoll(data.md5); }
+    startQrTimer();
   }catch(e){
     console.warn('[generateQR]', e.message);
     showOfflineFallback();
   }
+}
+
+// ══════════════════════════════════════
+//  QR SESSION COUNTDOWN (visual, matches KHQR-style apps)
+//  Auto-regenerates the QR when the session runs out; tapping
+//  the timer badge at any time refreshes it early.
+// ══════════════════════════════════════
+const QR_SESSION_SECONDS = 180;
+const QR_RING_CIRC = 50.24; // 2*PI*8
+let qrTimerInterval = null, qrSecondsLeft = QR_SESSION_SECONDS;
+
+function startQrTimer(){
+  qrSecondsLeft = QR_SESSION_SECONDS;
+  const badge = $('#khqr-timer');
+  if (badge) badge.classList.remove('expired');
+  renderQrTimer();
+  if (qrTimerInterval) clearInterval(qrTimerInterval);
+  qrTimerInterval = setInterval(() => {
+    qrSecondsLeft--;
+    if (qrSecondsLeft <= 0) {
+      clearInterval(qrTimerInterval);
+      qrSecondsLeft = 0;
+      renderQrTimer();
+      if (badge) badge.classList.add('expired');
+      const qrArea = $('#qr-area');
+      if (qrArea) qrArea.innerHTML = `<div class="khqr-qr-loading"><div class="qr-spinner"></div><span>Refreshing...</span></div>`;
+      generateQR();
+      return;
+    }
+    renderQrTimer();
+  }, 1000);
+}
+function renderQrTimer(){
+  const txt = $('#khqr-timer-txt'), ring = $('#khqr-timer-ring-fg');
+  if (txt) {
+    const m = Math.floor(qrSecondsLeft/60), s = qrSecondsLeft%60;
+    txt.textContent = m + ':' + String(s).padStart(2,'0');
+  }
+  if (ring) {
+    const frac = qrSecondsLeft / QR_SESSION_SECONDS;
+    ring.setAttribute('stroke-dashoffset', String(QR_RING_CIRC * (1 - frac)));
+  }
+}
+function downloadQrImage(){
+  const img = document.querySelector('#qr-area img');
+  if (!img) { toast('QR មិនទាន់ត្រៀមខ្លួន', 'error'); return; }
+  const a = document.createElement('a');
+  a.href = img.src;
+  a.download = 'KHQR-' + orderId + '.png';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
 
 function showOfflineFallback(){
@@ -376,9 +448,9 @@ function showOfflineFallback(){
     setPollStatus('waiting'); toast('Server offline — contact admin','error'); return;
   }
   const deeplink = `https://bakong.nbc.gov.kh/link/${encodeURIComponent(acct)}?amount=${parseFloat(payload.amount).toFixed(2)}&currency=USD&memo=${encodeURIComponent(orderId)}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(deeplink)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=8&data=${encodeURIComponent(deeplink)}`;
   const img = document.createElement('img');
-  img.style.cssText='width:100%;max-width:220px;height:auto;display:block;border-radius:6px';
+  img.style.cssText='width:100%;height:auto;display:block;border-radius:6px';
   img.onload = () => { qrArea.innerHTML=''; qrArea.appendChild(img); };
   img.onerror = () => { qrArea.innerHTML = `<div style="padding:14px;text-align:center;font-size:11px;color:#666">QR failed<br><a href="${deeplink}" style="color:#c9960a" target="_blank">Open Bakong</a></div>`; };
   img.src = qrUrl;
@@ -386,6 +458,7 @@ function showOfflineFallback(){
   if(btn&&wrap){ btn.href=deeplink; wrap.style.display='block'; }
   setPollStatus('waiting');
   toast('⚠️ Server offline — QR offline · Manual confirm needed','error');
+  startQrTimer();
 }
 
 async function silentPoll(md5){
@@ -468,6 +541,8 @@ async function sendTelegramNotification(order){
 }
 
 setPollStatus('waiting');
+$('#khqr-download-btn') && ($('#khqr-download-btn').onclick = downloadQrImage);
+$('#khqr-timer') && ($('#khqr-timer').onclick = () => { if (qrTimerInterval) clearInterval(qrTimerInterval); qrSecondsLeft = 0; renderQrTimer(); $('#khqr-timer').classList.add('expired'); $('#qr-area').innerHTML = `<div class="khqr-qr-loading"><div class="qr-spinner"></div><span>Refreshing...</span></div>`; generateQR(); });
 generateQR();
 
 })();

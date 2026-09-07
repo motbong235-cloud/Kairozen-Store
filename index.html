@@ -1499,6 +1499,44 @@ body{animation:pageIn .4s ease}
 </div>
 
 <!-- WALLET MODAL -->
+<style>
+.auth-form{display:none;flex-direction:column;gap:10px}
+.auth-form.active{display:flex}
+</style>
+<div class="modal-overlay" id="auth-modal">
+  <div class="modal" style="max-width:380px;padding:0;overflow:hidden;border-radius:22px">
+
+    <!-- Header -->
+    <div class="wm-header">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--gold2),transparent)"></div>
+      <div id="auth-modal-title" style="font-family:'Syne','Noto Sans Khmer',sans-serif;font-size:15px;font-weight:800;color:var(--text)"><svg width="13" height="13" viewBox="0 0 24 24" fill="var(--gold)" style="vertical-align:-2px;flex-shrink:0;margin-right:4px"><path d="M12.65 10A6 6 0 107 16H9v2h2v2h2v-2h2v-2h1l2.35-2.35A5.998 5.998 0 0012.65 10zM5 16c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg>ចូលគណនី</div>
+      <button class="modal-close" onclick="closeModal('auth-modal')">✕</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="wm-tabs">
+      <button class="wm-tab active" id="tab-login" onclick="switchAuthTab('login')">ចូលគណនី</button>
+      <button class="wm-tab" id="tab-register" onclick="switchAuthTab('register')">ចុះឈ្មោះ</button>
+    </div>
+
+    <div style="padding:20px">
+      <div class="auth-form active" id="form-login">
+        <input class="form-input" id="login-username" placeholder="Username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+        <input class="form-input" type="password" id="login-password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+        <button onclick="doLogin()" style="background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:9px;padding:11px;color:#080b0f;font-size:12px;font-weight:700;font-family:'Space Mono','Noto Sans Khmer',monospace;cursor:pointer;margin-top:4px">ចូលគណនី</button>
+      </div>
+      <div class="auth-form" id="form-register">
+        <input class="form-input" id="reg-displayname" placeholder="Display name" autocomplete="name" onkeydown="if(event.key==='Enter')doRegister()">
+        <input class="form-input" id="reg-username" placeholder="Username (a-z, 0-9, _)" autocomplete="username" onkeydown="if(event.key==='Enter')doRegister()">
+        <input class="form-input" type="password" id="reg-password" placeholder="Password (min 6 chars)" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()">
+        <input class="form-input" type="password" id="reg-confirm" placeholder="Confirm password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()">
+        <button onclick="doRegister()" style="background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:9px;padding:11px;color:#080b0f;font-size:12px;font-weight:700;font-family:'Space Mono','Noto Sans Khmer',monospace;cursor:pointer;margin-top:4px">ចុះឈ្មោះ</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <div class="modal-overlay" id="wallet-modal">
   <div class="modal" style="max-width:420px;padding:0;overflow:hidden;border-radius:22px">
 
@@ -2351,7 +2389,8 @@ function closeModal(id) { document.getElementById(id).classList.remove('show') }
 //  USER AUTH
 // ════════════════════════════════════
 function openAuth(tab='login') {
-  location.href = '/login.html' + (tab === 'register' ? '#register' : '');
+  openModal('auth-modal');
+  switchAuthTab(tab);
 }
 
 function switchAuthTab(tab) {
@@ -2734,7 +2773,7 @@ const POLL_MAX = 100;
 
 async function proceedToPayment() {
   if (!STATE.activeOrder || !STATE.activeOrder.product) { toast('Error: no active order', 'error'); return; }
-  if (!STATE.currentUser) { toast('Please login first', 'error'); closeModal('order-modal'); location.href = '/login.html'; return; }
+  if (!STATE.currentUser) { toast('Please login first', 'error'); closeModal('order-modal'); openAuth('login'); return; }
   const p = STATE.activeOrder.product;
   const qty = STATE.activeQty;
   const amount = (parseFloat(p.price) * qty).toFixed(2);

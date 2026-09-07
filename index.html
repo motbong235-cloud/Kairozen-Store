@@ -1687,27 +1687,23 @@ body{animation:pageIn .4s ease}
             </div>
 
             <div class="khqr-scan-hint">ស្កែន QR ខាងឆ្វេង<br>ដោយ Banking App ណាក៏បាន</div>
+
+            <div class="dep-timer-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--text3)" style="flex-shrink:0"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42A7.93 7.93 0 0012 4c-4.42 0-8 3.58-8 8s3.57 8 8 8 8-3.58 8-8c0-1.72-.54-3.31-1.47-4.61zM12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
+              <span class="dep-timer-val" id="wdep-timer">5:00</span>
+              <span>នៅសល់</span>
+            </div>
+            <div class="dep-progress-bar" style="width:100%">
+              <div class="dep-progress-fill" id="wdep-progress" style="width:100%"></div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;font-size:10px;font-family:'Space Mono','Noto Sans Khmer',monospace">
+              <span id="wdep-poll-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text3);display:inline-block;transition:background .3s;flex-shrink:0"></span>
+              <span id="wdep-poll-label" style="color:var(--text3)">Waiting...</span>
+            </div>
+
             <button class="btn-secondary" onclick="closeWalletDepositModal()">បោះបង់</button>
           </div>
 
-        </div>
-      </div>
-
-      <!-- ══ STEP 2: Verifying ══ -->
-      <div id="wdep-step-2" style="display:none">
-        <div class="dep-verify-wrap">
-          <div class="dep-verify-spinner"></div>
-          <div class="dep-verify-title">កំពុងផ្ទៀងផ្ទាត់...</div>
-          <div class="dep-verify-sub">រង់ចាំការបញ្ជាក់ពី Bakong<br>វានឹង auto-detect ភ្លាមៗ</div>
-          <div class="dep-timer-row">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--text3)" style="flex-shrink:0"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42A7.93 7.93 0 0012 4c-4.42 0-8 3.58-8 8s3.57 8 8 8 8-3.58 8-8c0-1.72-.54-3.31-1.47-4.61zM12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
-            <span class="dep-timer-val" id="wdep-timer">5:00</span>
-            <span>នៅសល់</span>
-          </div>
-          <div class="dep-progress-bar" style="width:100%">
-            <div class="dep-progress-fill" id="wdep-progress" style="width:100%"></div>
-          </div>
-          <button class="btn-secondary" style="margin-top:4px;width:100%" onclick="closeWalletDepositModal()">បោះបង់</button>
         </div>
       </div>
 
@@ -3610,10 +3606,10 @@ async function startWalletDeposit() {
   document.getElementById('wdep-amount-num').textContent    = amt.toFixed(2);
   document.getElementById('wdep-badge-amt').textContent     = amt.toFixed(2);
   document.getElementById('wdep-step-1').style.display     = 'block';
-  document.getElementById('wdep-step-2').style.display     = 'none';
   document.getElementById('wdep-step-3').style.display     = 'none';
   document.getElementById('wdep-step-fail').style.display  = 'none';
   document.getElementById('wallet-deposit-modal').classList.add('show');
+  setWdepPollStatus('waiting');
 
   STATE.depositAmt = amt;
   STATE.depositDeeplink = null;
@@ -3754,6 +3750,16 @@ function startWalletDepositRetry() {
   closeWalletDepositModal();
   setTimeout(() => openWalletModal(), 200);
 }
+function setWdepPollStatus(s) {
+  const dot = document.getElementById('wdep-poll-dot');
+  const lbl = document.getElementById('wdep-poll-label');
+  if (!dot || !lbl) return;
+  dot.style.animation = 'none';
+  if (s === 'waiting') { dot.style.background = 'var(--text3)'; lbl.textContent = 'Waiting...'; }
+  else if (s === 'polling') { dot.style.background = 'var(--gold)'; lbl.textContent = 'Detecting payment...'; dot.style.animation = 'pollBlink 1s infinite'; }
+  else if (s === 'paid') { dot.style.background = '#22c55e'; lbl.textContent = 'Paid!'; }
+}
+
 async function pollDeposit(md5, amt) {
   if (!STATE.depositPolling) return;
   depositPollAttempt++;
@@ -3764,16 +3770,11 @@ async function pollDeposit(md5, amt) {
   const progEl  = document.getElementById('wdep-progress');
   if (timerEl) timerEl.textContent = `${m}:${s.toString().padStart(2,'0')}`;
   if (progEl)  progEl.style.width  = (remaining/maxTime*100)+'%';
-  // Switch step 1 → step 2 after 3s — only if we have a real md5 (server online)
-  if (depositPollAttempt === 2 && md5 && !md5.startsWith('offline')) {
-    document.getElementById('wdep-step-1').style.display = 'none';
-    document.getElementById('wdep-step-2').style.display = 'block';
-  }
+  setWdepPollStatus(depositPollAttempt <= 1 ? 'waiting' : 'polling');
 
   if (depositPollAttempt > 100) {
     STATE.depositPolling = false;
     document.getElementById('wdep-step-1').style.display    = 'none';
-    document.getElementById('wdep-step-2').style.display    = 'none';
     document.getElementById('wdep-step-3').style.display    = 'none';
     document.getElementById('wdep-step-fail').style.display = 'block';
     return;
@@ -3788,11 +3789,11 @@ async function pollDeposit(md5, amt) {
     const data = await res.json();
     if (data.paid) {
       STATE.depositPolling = false;
+      setWdepPollStatus('paid');
       // Credit wallet
       addWalletTxn(STATE.currentUser.username, amt, 'Top-up via KHQR');
       const newBal = getWalletBalance();
       document.getElementById('wdep-step-1').style.display    = 'none';
-      document.getElementById('wdep-step-2').style.display    = 'none';
       document.getElementById('wdep-step-fail').style.display = 'none';
       document.getElementById('wdep-step-3').style.display    = 'block';
       document.getElementById('wdep-new-balance').textContent = '$' + newBal.toFixed(2);

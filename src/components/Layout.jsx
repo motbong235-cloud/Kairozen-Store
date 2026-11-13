@@ -41,7 +41,7 @@ export default function Layout() {
       </main>
 
       <footer>
-        <div className="wrap">© 2026 Kairozen Store · React pages · RielPay · Khmer TopUp</div>
+        <div className="wrap foot-inner">© 2026 Kairozen Store · ABA KHQR · Khmer TopUp</div>
       </footer>
 
       <nav className="mbar">

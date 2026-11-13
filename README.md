@@ -1,36 +1,23 @@
-# Kairozen Store (React + Vite)
+# Kairozen Store (React pages)
 
-KonpKay-inspired UI · **RielPay** KHQR · **Khmer TopUp** API · Render ready.
+Multi-page React app (React Router) + Express + RielPay + Khmer TopUp.
 
-## Stack
+## Pages
 
-- React 18 + Vite
-- Express API (`server/`)
-- `npm run build` → `dist/` served by Express
+| Path | Page |
+|------|------|
+| `/` | Home |
+| `/games` | All games |
+| `/topup` | Top-up checkout |
+| `/topup/:gameId` | Top-up for one game |
+| `/faq` | FAQ |
+| `/track` | Track order |
 
-## Scripts
-
-```bash
-npm install
-npm run dev          # Vite :5173 + API :3000
-npm run build
-npm start            # production (serves dist)
-```
-
-## Env (Render)
-
-- `RIELPAY_API_KEY` (required)
-- `RIELPAY_WEBHOOK_SECRET`
-- `KHMER_TOPUP_API_KEY`
-- `ADMIN_PASSWORD`
-- `DATA_DIR=/var/data`
-
-Webhook: `https://YOUR-APP.onrender.com/api/webhook/rielpay`
-
-## Structure
+## Deploy (Render)
 
 ```
-src/           React UI
-server/        Express + RielPay + Khmer TopUp
-public/assets  banners
+build: npm install && npm run build
+start: npm start
 ```
+
+Env: `RIELPAY_API_KEY`, `KHMER_TOPUP_API_KEY`, `ADMIN_PASSWORD`, `DATA_DIR=/var/data`

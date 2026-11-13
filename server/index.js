@@ -293,14 +293,13 @@ app.post("/api/admin/orders/:id/done", adminAuth, (req, res) => {
   res.json({ order: publicOrder(o) });
 });
 
-/* ---------- Static (Vite dist in production, public assets always) ---------- */
+/* ---------- Static: Vite dist + SPA fallback ---------- */
 app.use(express.static(path.join(ROOT, "dist"), { maxAge: "1h" }));
 app.use(express.static(path.join(ROOT, "public"), { maxAge: "1h" }));
 app.get("*", (req, res, next) => {
   if (String(req.path || "").startsWith("/api")) return next();
-  const index = path.join(ROOT, "dist", "index.html");
-  res.sendFile(index, (err) => {
-    if (err) res.status(404).send("Build missing — run npm run build");
+  res.sendFile(path.join(ROOT, "dist", "index.html"), (err) => {
+    if (err) res.status(404).send("Run npm run build");
   });
 });
 
